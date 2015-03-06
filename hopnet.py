@@ -42,6 +42,16 @@ def setup_argparser():
 
     return parser
 
+def normalize_data (data, scale): #Normalization function
+    A = max(data) #max of old scale
+    B = min(data) #min of old scale
+    a = 0
+    b = scale
+    norm_data = data.copy()
+    for x in norm_data:
+        x = a + (A-x) * (b - a)/(B-A)
+    return norm_data
+
 # sigma: because who knows how many times we may have to use it
 # it's that polarizing function that we use litterally all the time
 def sigma(h):
@@ -224,7 +234,7 @@ class HNN:
                 if self.NN[i] != new_neuron_state:
                     stable_bool = False
                     #427/524 ONLY
-                    self.basin_sizes[x][0] += 1
+                    self.basin_sizes[p][0] += 1
 
 
                 self.NN[i] = new_neuron_state
@@ -233,7 +243,7 @@ class HNN:
             if stable_bool:
                 self.stable[x] += 1
                 #427/524 ONLY
-                self.calc_basin_size(x)
+                self.calc_basin_size(x, p)
 
     def calc_basin_size(self, k):
         basin = 0
@@ -263,7 +273,8 @@ class HNN:
         #average basin size            
         basin/=5
 
-        self.basin_sizes[k][basin] += 1
+        self.basin_sizes[p][round(basin, 0)] += 1
+
 
 # Main
 if __name__ == '__main__':
