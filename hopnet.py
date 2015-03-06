@@ -235,10 +235,44 @@ class HNN:
                 #427/524 ONLY
                 self.calc_basin_size(p)
 
-    def calc_basin_size(self, p):
-        array = np.random.permutation(self.vector_size)
-        for i in range(self.num_vectors):
-            p = self.vectors[i]
+    def calc_basin_size(p):
+        for run in range(5):
+            array = np.random.permutation(self.nnsize)
+            for i in range(self.num_vectors):
+                self.NN = vectors[p]
+                doesnt_converge = False
+                #flib bits for NN
+                for j in range(i):
+                    self.NN[array[j]] *= -1
+                stable_bool = True
+                converge_point = 0
+                for z in range(10):
+                    for x in range(nnsize):
+                        # h_i = sum[j-1, N]{ w[i][j] * s[j] }
+                        for y in range(nnsize):
+                            h_i +=  (weight[i * self.vector_size * i + j] * self.NN[j])
+                        #s'i = sigma(h)
+                        new_neuron_state = sigma(h_i)
+                        #if they don't match it wasn't stable
+                        if NN[i] != new_neuron_state:
+                            stable_bool = False
+                            basin_sizes[p] += i
+                            break
+                        self.NN[x] = new_neuron_state
+
+                    if not stable_bool:
+                        break
+
+                if not stable_bool:
+                    break
+
+            if stable_bool:
+                basin_size += 50
+        #average basin size
+        basin_sizes[p]/=5
+
+        #PLACE GRAPHS HERE
+>>>>>>> b5d70cb01e2119595e23edc641c8609671fb4338
 
 # Main
 if __name__ == '__main__':
