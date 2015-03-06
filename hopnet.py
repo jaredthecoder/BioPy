@@ -166,7 +166,7 @@ class HNN:
         return self.vectors
 
     def calcStabilityProb(self, p):
-        self.prob_stability[p] = self.stable[p]/p
+        self.prob_stability[p] = self.stable[p] / p
         self.prob_instability[p] = 1 - self.prob_stability[p]
 
     def getStableProb(self):
@@ -185,14 +185,15 @@ class HNN:
             self.test_vectors(p)
             #d. Calculate stability and instability prob for each p
             self.calcStabilityProb(p)
+
     def getBasinHistogram(self):
         return self.basin_sizes
 
     # Step 1 of VanHornwender's Help
     # Check me on this, it may be completely wrong.
     def imprint_vectors(self, p):
-        for i in range(nnsize):
-            for j in range(nnsize):
+        for i in range(self.nnsize):
+            for j in range(self.nnsize):
                 if i == j:
                     self.weights[self.vector_size * i + j] = 0
                 else:
@@ -237,31 +238,36 @@ class HNN:
 
     def calc_basin_size(self, k):
         basin = 0
+        h_i = 0
+        stable_bool = None
+
         for run in range(5):
             array = np.random.permutation(self.nnsize)
             for i in range(self.num_vectors):
                 self.NN = self.vectors[k]
-                #flib bits for NN
+                # flip bits for NN
                 for j in range(i):
                     self.NN[array[j]] *= -1
-                stable_bool = True                
-                for z in range(10):    
-                    for x in range(nnsize):
+                stable_bool = True
+                for z in range(10):
+                    for x in range(self.nnsize):
                         # h_i = sum[j-1, N]{ w[i][j] * s[j] }
-                        for y in range(nnsize):
-                            h_i +=  (self.weight[x * self.vector_size + y] * self.NN[y])
-                        #s'i = sigma(h)
+                        for y in range(self.nnsize):
+                            h_i +=  (self.weights[x * self.vector_size + y] * self.NN[y])
+                        # s'i = sigma(h)
                         self.NN[x] = sigma(h_i)
-                        #if they don't match it wasn't stable
+                        # if they don't match it wasn't stable
 
-                #if it doesn't converge after 10 runs then say it's false
-                if not np.array_equal(self.NN, self.vectors[k])):
+                # if it doesn't converge after 10 runs then say it's false
+                if not np.array_equal(self.NN, self.vectors[k]):
                     stable_bool = False
                     basin += i
+
             if stable_bool:
                 basin = 50
-        #average basin size            
-        basin/=5
+
+        # average basin size
+        basin /= 5
 
         self.basin_sizes[k][basin] += 1
 
@@ -282,6 +288,7 @@ if __name__ == '__main__':
     if not os.path.exists('results'):
         os.makedirs('results')
 
+
     with cd('results'):
         if not os.path.exists('data'):
             os.makedirs('data')
@@ -291,12 +298,12 @@ if __name__ == '__main__':
 
     # compute program and graph
     # initialize avg stability
-    avg_stable_prob = np.zeroes(args.nvec)
-    avg_unstable_prob = np.zeroes(args.nvec)
+    avg_stable_prob = np.zeros(args.nvec)
+    avg_unstable_prob = np.zeros(args.nvec)
     #do several runs of experiment compute average stability
     for i in range(args.nruns):
         hnn = HNN(args)
-        hnn.stability_drive()
+        hnn.drive()
         stable_prob = hnn.getStableProb()
         unstable_prob = hnn.getInstabilityProb()
 
@@ -304,11 +311,13 @@ if __name__ == '__main__':
         #sum stable and unstable probs
         avg_stable_prob += stable_prob
         avg_unstable_prob += unstable_prob
+
     #avg stable and unstable probs
     avg_stable_prob /= args.nruns
     avg_unstable_prob /= args.nruns
 
     #graph stable and unstable probs
     avg_graph_file = plot_data(experiment_number, args.nvec, avg_stable_prob, avg_unstable_prob)
+    histo_file = plot_histogram()
     create_html_page(experiment_number, graph_list, avg_graph_file)
 
