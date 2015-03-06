@@ -162,7 +162,6 @@ class HNN:
         self.prob_instability = np.zeroes(self.num_vectors)
         self.basin_sizes = np.zeroes(self.num_vectors, self.num_vectors)
 
-
     # Generate the patterms (vectors)
     def generate_vectors(self):
         self.vectors = []
@@ -194,6 +193,7 @@ class HNN:
             #c. test first p imprinted patterns for stability
             self.test_vectors(p)
             #d. Calculate stability and instability prob for each p
+
             self.calcStabilityProb(p)
 
     def getBasinHistogram(self):
@@ -246,15 +246,15 @@ class HNN:
                 #427/524 ONLY
                 self.calc_basin_size(x, p)
 
-    def calc_basin_size(self, k):
+    def calc_basin_size(self, k, p):
         basin = 0
         h_i = 0
         stable_bool = None
-
         for run in range(5):
             array = np.random.permutation(self.nnsize)
             for i in range(self.num_vectors):
                 self.NN = self.vectors[k]
+
                 # flip bits for NN
                 for j in range(i):
                     self.NN[array[j]] *= -1
@@ -273,7 +273,12 @@ class HNN:
                     stable_bool = False
                     basin += i
 
+                #if it doesn't converge after 10 runs then say it's false
+                if not np.array_equal(self.NN, self.vectors[k])):
+                    stable_bool = False
+                    basin += i
             if stable_bool:
+
                 basin = 50
 
         # average basin size
