@@ -185,26 +185,21 @@ class HNN:
             self.test_vectors(p)
             #d. Calculate stability and instability prob for each p
             self.calcStabilityProb(p)
-    def getBasinHistogram():
+    def getBasinHistogram(self):
         return self.basin_sizes
 
     # Step 1 of VanHornwender's Help
     # Check me on this, it may be completely wrong.
     def imprint_vectors(self, p):
-        for x in range(p):
-            for i in range(nnsize):
-                for j in range(nnsize):
-                    if i == j:
-                        self.weights[self.vector_size * i + j] = 0
-                    else:
-                        state_sum = 0
-                        for i in p:
-                            for j in p:
-                                if i == j:
-                                    self.weights[self.vector_size * i + j] = 0
-                                else:
-                                    state_sum += i * j;
-                        self.weights[self.vector_size * i + j] = state_sum / self.vsize
+        for i in range(nnsize):
+            for j in range(nnsize):
+                if i == j:
+                    self.weights[self.vector_size * i + j] = 0
+                else:
+                    state_sum = 0
+                    for k in range(p):
+                        state_sum += self.vectors[k][i] * self.vectors[k][j];
+                    self.weights[self.vector_size * i + j] = state_sum / self.nnsize
 
     #Started Step 2 of VanHornwender's Help, started to get confused here really late
     # and decided to go to bed.
@@ -240,7 +235,7 @@ class HNN:
                 #427/524 ONLY
                 self.calc_basin_size(x)
 
-    def calc_basin_size(k):
+    def calc_basin_size(self, k):
         basin = 0
         for run in range(5):
             array = np.random.permutation(self.nnsize)
