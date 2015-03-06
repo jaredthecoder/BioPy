@@ -40,13 +40,24 @@ def setup_argparser():
                                      version='1.0.0', formatter_class=RawTextHelpFormatter)
     requiredArguments = parser.add_argument_group('required Arguments')
     requiredArguments.add_argument('-exp', metavar='Exp_Num', dest='experiment_number', required=True, type=str, help='Number of this experiment.')
-    requiredArguments.add_argument('-vsize', metavar='Vector_Size', dest='vsize', required=True, type=str, help='Size of p vectors.')
-    requiredArguments.add_argument('-nvec', metavar='Num_Vectors', dest='nvec', required=True, type=str, help='Number of p vectors.')
+    requiredArguments.add_argument('-vsize', metavar='Vector_Size', dest='vsize', required=True, type=str, help='Size of vectors.')
+    requiredArguments.add_argument('-nvec', metavar='Num_Vectors', dest='nvec', required=True, type=str, help='Number of vectors.')
     requiredArguments.add_argument('-nnsize', metavar='Netw_Size', dest='nnsize', required=True, type=str, help='Size of Neural Network.')
+    repuitedArguments.add_argument('-numruns', metavar='Num_Runs', dest= 'nruns', required = True, type=str, help='Number of runs of the experiment')
 
 
 
     return parser
+#sigma: because who knows how many times we may have to use it
+# it's that polarizing function that we use litterally all the time
+def sigma(h):
+        # sigma = 1 if h >= 0 and -1 if h < 0
+        sigma = 0
+        if h < 0:
+            sigma = -1
+        if h > 0:
+            sigma = 1
+        return sigma
 
 # Plot the results of the combined runs using matplotlib
 # I want to try to reuse this from the last lab
@@ -84,10 +95,15 @@ class HNN:
         self.vectors = self.generate_vectors()
         self.vector_size = args.vsize
         self.num_vectors = args.nvec
+        self.stable = np.zeroes((num_vectors)) #array of number of times a
         self.num_weights = self.vsize * self.vsize
-        self.weights = np.zeroes((self.num_weights))
+        self.weights = np.zeroes((self.num_weights)) # would be better if we made a 100x100 matrix to copy to NN
         self.nnsize = args.nnsize
         self.NN = np.zeroes((self.nnsize))
+        self.prob_stability = np.zeroes(num_vectors)
+        self.prob_instability = np.zeroes(num_vectors)
+        self.basin_sizes = np.zeroes(num_vectors)
+
 
     # Generate the patterms (vectors)
     def generate_vectors():
@@ -100,12 +116,30 @@ class HNN:
             self.vectors.append(vec)
 
         return self.vectors
+    def calcStabilityProb(p):
+        self.prob_stability[p] = self.stable[p]/p
+        self.prob_instability[p] = 1 - prob_stability[p]
+
+    def getStableProb():
+        return self.prob_stability
+    def getInstabilityProb():
+        return self.prob_instability
+
+    def drive(): #driver for calculating stability (COSC 420)
+        #a. generate vectors
+        generate_vectors()
+        for p in range(self.num_vectors):
+            #b. imprint the first p vectors on a hopfield newtwork
+            imprint_vectors(p)
+            #c. test first p imprinted patterns for stability
+            test_vectors(p)
+            #d. Calculate stability and instability prob for each p
+            calcStabilityProb(p)
 
     # Step 1 of VanHornwender's Help
     # Check me on this, it may be completely wrong.
-    def imprint_vectors():
-
-        for p in self.vectors:
+    def imprint_vectors(p):
+        for x in range(p):
             for i in p:
                 for j in p:
                     if i == j:
@@ -121,15 +155,41 @@ class HNN:
                         self.weights[self.vector_size * i + j] = state_sum / self.vsize
 
 
-    # Started Step 2 of VanHornwender's Help, started to get confused here really late
+ #Started Step 2 of VanHornwender's Help, started to get confused here really late
     # and decided to go to bed.
-    def test_vectors():
+    def test_vectors(p):
+        stable_index = 0
+        for x in range(p):
+            #1. Copy NN into pattern
+            self.NN = vectors[x];
+            new_neuron_state = 0
+            bool stable_ = True # keep track of stability
 
-        for p in self.vectors:
-            self.NN = p
-            for i in p:
-                for j in self.NN:
+            #2. Compute new stat value
+            for i in range(nnsize):    
+                # h_i = sum[j-1, N]{ w[i][j] * s[j] }
+                for j in range(nnsize):
+                    h_i +=  (weight[i * self.vector_size * i + j] * self.NN[j])
+                #s'i = sigma(h)
+                new_neuron_state = sigma(h_i)
+                #if they don't match it wasn't stable
+                if self.NN[i] != new_neuron_state:
+                    stable = False
+                    #427/524 ONLY
+                    basin_sizes[p] = 0
 
+                self.NN[i] = new_neuron_state
+
+            #Determine if p is stable: if so increment
+            if stable = True:
+                stable[x] += 1
+                #427/524 ONLY
+                calc_basin_size(p)
+
+    def calc_basin_size(p):
+        array = np.random.permutation(vector_size)
+        for i in range(num_vectors):
+            p = vectors
 
 # Main
 if __name__ == '__main__':
@@ -154,10 +214,19 @@ if __name__ == '__main__':
         with cd('data'):
             if not os.path.exists('Experiment-' + str(experiment_number)):
                 os.makedirs('Experiment-' + str(experiment_number))
+    # compute program and graph
+    #initialize avg stability
+    avg_stable_prob = np.zeroes(args.nvec)
+    avg_unstable_prob = np.zeroes(args.nvec)
+    #do several runs of experiment compute average stability
+    for i in range(args.nruns:
+        hnn = HNN(args)
+        hnn.stability_drive()
+        #sum stable and unstable probs
+        avg_stable_prob += hnn.getStableProb()
+        avg_unstable_prob += hnn.getInstabilityProb()
+    #avg stable and unstable probs
+    avg_stable_prob /= args.nruns
+    avg_unstable_prob /= args.nruns
 
-    hnn = HNN(args)
-    hnn.imprint_vectors()
-    hnn.test_vectors()
-
-
-
+    #graph stable and unstable probs
