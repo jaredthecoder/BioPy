@@ -150,7 +150,8 @@ class HNN:
         self.NN = np.zeroes((self.nnsize))
         self.prob_stability = np.zeroes(self.num_vectors)
         self.prob_instability = np.zeroes(self.num_vectors)
-        self.basin_sizes = np.zeroes(self.num_vectors)
+        self.basin_sizes = np.zeroes(self.num_vectors, self.num_vectors)
+
 
     # Generate the patterms (vectors)
     def generate_vectors(self):
@@ -184,13 +185,15 @@ class HNN:
             self.test_vectors(p)
             #d. Calculate stability and instability prob for each p
             self.calcStabilityProb(p)
+    def getBasinHistogram():
+        return self.basin_sizes
 
     # Step 1 of VanHornwender's Help
     # Check me on this, it may be completely wrong.
     def imprint_vectors(self, p):
         for x in range(p):
-            for i in p:
-                for j in p:
+            for i in range(nnsize):
+                for j in range(nnsize):
                     if i == j:
                         self.weights[self.vector_size * i + j] = 0
                     else:
@@ -217,6 +220,7 @@ class HNN:
             #2. Compute new stat value
             for i in range(self.nnsize):
                 # h_i = sum[j-1, N]{ w[i][j] * s[j] }
+
                 for j in range(self.nnsize):
                     h_i +=  (self.weight[i * self.vector_size * i + j] * self.NN[j])
                 #s'i = sigma(h)
@@ -225,7 +229,8 @@ class HNN:
                 if self.NN[i] != new_neuron_state:
                     stable_bool = False
                     #427/524 ONLY
-                    self.basin_sizes[p] = 0
+                    self.basin_sizes[x][0] += 1
+
 
                 self.NN[i] = new_neuron_state
 
@@ -233,46 +238,37 @@ class HNN:
             if stable_bool:
                 self.stable[x] += 1
                 #427/524 ONLY
-                self.calc_basin_size(p)
+                self.calc_basin_size(x)
 
-    def calc_basin_size(p):
+    def calc_basin_size(k):
+        basin = 0
         for run in range(5):
             array = np.random.permutation(self.nnsize)
             for i in range(self.num_vectors):
-                self.NN = vectors[p]
-                doesnt_converge = False
+                self.NN = self.vectors[k]
                 #flib bits for NN
                 for j in range(i):
                     self.NN[array[j]] *= -1
-                stable_bool = True
-                converge_point = 0
-                for z in range(10):
+                stable_bool = True                
+                for z in range(10):    
                     for x in range(nnsize):
                         # h_i = sum[j-1, N]{ w[i][j] * s[j] }
                         for y in range(nnsize):
-                            h_i +=  (weight[i * self.vector_size * i + j] * self.NN[j])
+                            h_i +=  (self.weight[x * self.vector_size + y] * self.NN[y])
                         #s'i = sigma(h)
-                        new_neuron_state = sigma(h_i)
+                        self.NN[x] = sigma(h_i)
                         #if they don't match it wasn't stable
-                        if NN[i] != new_neuron_state:
-                            stable_bool = False
-                            basin_sizes[p] += i
-                            break
-                        self.NN[x] = new_neuron_state
 
-                    if not stable_bool:
-                        break
-
-                if not stable_bool:
-                    break
-
+                #if it doesn't converge after 10 runs then say it's false
+                if not np.array_equal(self.NN, self.vectors[k])):
+                    stable_bool = False
+                    basin += i
             if stable_bool:
-                basin_size += 50
-        #average basin size
-        basin_sizes[p]/=5
+                basin = 50
+        #average basin size            
+        basin/=5
 
-        #PLACE GRAPHS HERE
->>>>>>> b5d70cb01e2119595e23edc641c8609671fb4338
+        self.basin_sizes[k][basin] += 1
 
 # Main
 if __name__ == '__main__':
