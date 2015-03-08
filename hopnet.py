@@ -251,7 +251,7 @@ class HNN:
         h_i = 0
         stable_bool = None
         for run in range(5):
-            array = np.random.permutation(self.nnsize)
+            array = np.random.permuwhat tation(self.nnsize)
             for i in range(self.num_vectors):
                 self.NN = self.vectors[k]
 
@@ -334,6 +334,6 @@ if __name__ == '__main__':
 
     #graph stable and unstable probs
     avg_graph_file = plot_data(experiment_number, args.nvec, avg_stable_prob, avg_unstable_prob)
-    histo_file = plot_histogram()
+    #histo_file = plot_histogram()
     create_html_page(experiment_number, graph_list, avg_graph_file)
 
