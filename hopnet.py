@@ -49,7 +49,7 @@ def normalize_data (data, scale): #Normalization function
     b = scale
     norm_data = data.copy()
     for x in norm_data:
-        x = a + (A-x) * (b - a)/(B-A)
+        x = a + (A - x) * (b - a) / (B - A)
     return norm_data
 
 # sigma: because who knows how many times we may have to use it
@@ -65,7 +65,7 @@ def sigma(h):
 
 # Plot the results of the combined runs using matplotlib
 # I want to try to reuse this from the last lab
-def plot_data(experiment_number, nvec, avg_stable_prob, avg_unstable_prob, run_no=0):
+def plot_graph_data(experiment_number, nvec, avg_stable_prob, avg_unstable_prob, run_no=0):
 
     run_str = ''
     p = list(xrange(nvec))
@@ -107,8 +107,45 @@ def plot_data(experiment_number, nvec, avg_stable_prob, avg_unstable_prob, run_n
 
     return file_path + '/' + root_path + '/' + path
 
+def plot_histogram(experiment_number, avg_basin_size):
+
+    (num_rows, num_cols) = avg_basin_size.shape
+
+    abs_path = os.path.abspath(".")
+    root_path = 'results/data/Experiment-' + str(experiment_number)
+    file_path = 'file://' + abs_path
+    path = 'Histogram-for-Experiment-' + experiment_number + '.jpg'
+
+    fig = plt.figure()
+
+    # Histogram normalized to 1
+    plt.subplot(2, 1, 1)
+    for i in range(num_rows):
+        plt.plot(np.arange(num_cols), normalize_data(avg_basin_size[:][i], 1), label="p = %s" % i)
+    plt.legend(loc=0)
+    plt.xlabel('B')
+    plt.ylabel('Value')
+    plt.title('Probaility Distribution of Basin Sizes Normalized to 1')
+    plt.grid()
+
+    # Histogram normalized to p
+    plt.subplot(2, 1, 2)
+    for i in range(num_rows):
+        plt.plot(np.arange(num_cols), normalize_data(avg_basin_size[:][i], i), label="p = %s" % i)
+
+    plt.legend(loc=0)
+    plt.xlabel('B')
+    plt.ylabel('Value')
+    plt.title('Probaility Distribution of Basin Sizes Normalized to P')
+    plt.grid()
+
+    # Save the figure
+    fig.savefig(root_path + '/' + path)
+
+    return file_path + '/' + root_path + '/' + path
+
 # Create an html page out of all the JPGs and the Graph
-def create_html_page(experiment_number, graph_list, experiment_graph_path):
+def create_html_page(experiment_number, graph_list, experiment_graph_path, histogram_1, histogram_2):
 
     html_filename = 'results/data/Experiment-' + str(experiment_number) + '/Experiment-' + experiment_number + '.html'
 
@@ -136,9 +173,13 @@ def create_html_page(experiment_number, graph_list, experiment_graph_path):
     </ul>
     <h2>Average of Runs -- Data Graph</h2>
     <img src='%s'height=300 width=300 border=1>
+    <h2>Histogram 1 - Normalized to 1</h2>
+    <img src='%s'height=300 width=300 border=1>
+    <h2>Histogram 2 - Normalized to p</h2>
+    <img src='%s'height=300 width=300 border=1>
     </body>
     </html>
-    ''' % (experiment_graph_path)
+    ''' % (experiment_graph_path, histogram_1, histogram_2)
 
     html_string += string2
 
@@ -196,7 +237,7 @@ class HNN:
 
             self.calcStabilityProb(p)
 
-    def getBasinHistogram(self):
+    def getBasinSizes(self):
         return self.basin_sizes
 
     # Step 1 of VanHornwender's Help
@@ -278,7 +319,6 @@ class HNN:
                     stable_bool = False
                     basin += i
             if stable_bool:
-
                 basin = 50
 
         # average basin size
@@ -316,24 +356,31 @@ if __name__ == '__main__':
     # initialize avg stability
     avg_stable_prob = np.zeros(args.nvec)
     avg_unstable_prob = np.zeros(args.nvec)
+    avg_basin_size = np.zeros((args.nvec, args.nvec))
+
     #do several runs of experiment compute average stability
     for i in range(args.nruns):
         hnn = HNN(args)
         hnn.drive()
         stable_prob = hnn.getStableProb()
         unstable_prob = hnn.getInstabilityProb()
+        basin_sizes = hnn.getBasinSizes()
 
-        graph_list += plot_data(experiment_number, args.nvec, stable_prob, unstable_prob)
+        graph_list += plot_graph_data(experiment_number, args.nvec, stable_prob, unstable_prob)
+
         #sum stable and unstable probs
         avg_stable_prob += stable_prob
         avg_unstable_prob += unstable_prob
+        avg_basin_size += basin_sizes
 
     #avg stable and unstable probs
     avg_stable_prob /= args.nruns
     avg_unstable_prob /= args.nruns
+    avg_basin_size /= args.nruns
 
     #graph stable and unstable probs
-    avg_graph_file = plot_data(experiment_number, args.nvec, avg_stable_prob, avg_unstable_prob)
-    #histo_file = plot_histogram()
-    create_html_page(experiment_number, graph_list, avg_graph_file)
+    avg_graph_file = plot_graph_data(experiment_number, args.nvec, avg_stable_prob, avg_unstable_prob)
+    histo_file = plot_histogram(experiment_number, avg_basin_size)
+
+    create_html_page(experiment_number, graph_list, histo_list, avg_histo_file, avg_graph_file)
 
