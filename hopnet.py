@@ -9,6 +9,7 @@
 import os
 import random
 import contextlib
+import sys
 import argparse
 from argparse import RawTextHelpFormatter
 
@@ -52,33 +53,23 @@ def normalize_data (data, scale): #Normalization function
         x = a + (A - x) * (b - a) / (B - A)
     return norm_data
 
-# sigma: because who knows how many times we may have to use it
-# it's that polarizing function that we use litterally all the time
-def sigma(h):
-        # sigma = 1 if h >= 0 and -1 if h < 0
-        sigma = 0
-        if h < 0:
-            sigma = -1
-        if h > 0:
-            sigma = 1
-        return sigma
-
 # Plot the results of the combined runs using matplotlib
 # I want to try to reuse this from the last lab
 def plot_graph_data(experiment_number, nvec, avg_stable_prob, avg_unstable_prob, run_no=0):
 
     run_str = ''
-    p = list(xrange(nvec))
+    p = list(xrange(int(nvec)))
     abs_path = os.path.abspath(".")
     root_path = 'results/data/Experiment-' + str(experiment_number)
     file_path = 'file://' + abs_path
     if run_no == 0:
-        run_str = '-run_no-' + run_no
+        run_str = '-run_no-' + str(run_no)
     path = 'Graph-for-Experiment-' + experiment_number + run_str +  '.jpg'
 
     fig = plt.figure()
 
     # Plot Unstable Imprints
+    print "Ploting Unstable Imprints"
     plt.subplot(2, 1, 1)
     plt.plot(p, avg_unstable_prob)
     plt.legend(loc=0)
@@ -91,6 +82,7 @@ def plot_graph_data(experiment_number, nvec, avg_stable_prob, avg_unstable_prob,
     plt.grid()
 
     # Plot Stable Imprints
+    print "Plotting Stable Imprints"
     plt.subplot(2, 1, 2)
     plt.plot(p, avg_stable_prob)
     plt.legend(loc=0)
@@ -117,17 +109,18 @@ def plot_histogram(experiment_number, avg_basin_size):
     path = 'Histogram-for-Experiment-' + experiment_number + '.jpg'
 
     fig = plt.figure()
-
+    print "Basin of Attraction: Plotting basin probability dirstribution"
     # Histogram normalized to 1
     plt.subplot(2, 1, 1)
     for i in range(num_rows):
-        plt.plot(np.arange(num_cols), normalize_data(avg_basin_size[:][i], 1), label="p = %s" % i)
+        plt.plot(np.arange(num_cols), normalize_data(avg_basin_size[:][i], 1), label="p = %s" % str(i+1))
     plt.legend(loc=0)
     plt.xlabel('B')
     plt.ylabel('Value')
     plt.title('Probaility Distribution of Basin Sizes Normalized to 1')
     plt.grid()
 
+    print "Basin of Attraction: Plotting basin histogram"
     # Histogram normalized to p
     plt.subplot(2, 1, 2)
     for i in range(num_rows):
@@ -145,7 +138,8 @@ def plot_histogram(experiment_number, avg_basin_size):
     return file_path + '/' + root_path + '/' + path
 
 # Create an html page out of all the JPGs and the Graph
-def create_html_page(experiment_number, graph_list, experiment_graph_path, histogram_1, histogram_2):
+def create_html_page(experiment_number, graph_list, histofile, avg_graph_file):
+    print "Creating html page"
 
     html_filename = 'results/data/Experiment-' + str(experiment_number) + '/Experiment-' + experiment_number + '.html'
 
@@ -173,13 +167,11 @@ def create_html_page(experiment_number, graph_list, experiment_graph_path, histo
     </ul>
     <h2>Average of Runs -- Data Graph</h2>
     <img src='%s'height=300 width=300 border=1>
-    <h2>Histogram 1 - Normalized to 1</h2>
-    <img src='%s'height=300 width=300 border=1>
-    <h2>Histogram 2 - Normalized to p</h2>
-    <img src='%s'height=300 width=300 border=1>
+    <h2>Basin of Attraction Histograms</h2>
+    <img src='%s'height=600 width=300 border=1>
     </body>
     </html>
-    ''' % (experiment_graph_path, histogram_1, histogram_2)
+    ''' % (avg_graph_file, histofile)
 
     html_string += string2
 
@@ -190,33 +182,22 @@ class HNN:
 
     # Initialized at insatiation of class
     def __init__(self, args):
+        print "Initializing Hopfiled"
         self.args = args
-        self.vectors = self.generate_vectors()
-        self.vector_size = args.vsize
-        self.num_vectors = args.nvec
-        self.stable = np.zeroes((self.num_vectors)) #array of number of times a
-        self.num_weights = self.vsize * self.vsize
-        self.weights = np.zeroes((self.num_weights)) # would be better if we made a 100x100 matrix to copy to NN
-        self.nnsize = args.nnsize
-        self.NN = np.zeroes((self.nnsize))
-        self.prob_stability = np.zeroes(self.num_vectors)
-        self.prob_instability = np.zeroes(self.num_vectors)
-        self.basin_sizes = np.zeroes(self.num_vectors, self.num_vectors)
-
-    # Generate the patterms (vectors)
-    def generate_vectors(self):
-        self.vectors = []
-
-        for m in range(self.num_vectors):
-            vec = np.empty((self.vector_size))
-            for n in vec:
-                n = random.choice([-1, 1])
-            self.vectors.append(vec)
-
-        return self.vectors
+        self.vector_size = int(args.vsize)
+        self.num_vectors = int(args.nvec)
+        self.vectors = np.random.choice([-1,1], (self.num_vectors, self.vector_size))
+        self.stable = np.zeros((self.num_vectors)) #array of number of times a
+        self.weights = np.zeros((self.vector_size, self.vector_size)) # would be better if we made a 100x100 matrix to copy to NN
+        self.nnsize = int(args.nnsize)
+        self.NN = np.zeros((self.nnsize))
+        self.prob_stability = np.zeros(self.num_vectors)
+        self.prob_instability = np.zeros(self.num_vectors)
+        self.basin_sizes = np.zeros((self.num_vectors, self.num_vectors))
 
     def calcStabilityProb(self, p):
-        self.prob_stability[p] = self.stable[p] / p
+        print "Calculating Probability of stability"
+        self.prob_stability[p] = self.stable[p] / (p+1)
         self.prob_instability[p] = 1 - self.prob_stability[p]
 
     def getStableProb(self):
@@ -226,15 +207,13 @@ class HNN:
         return self.prob_instability
 
     def drive(self): #driver for calculating stability (COSC 420)
-        #a. generate vectors
-        self.generate_vectors()
         for p in range(self.num_vectors):
-            #b. imprint the first p vectors on a hopfield newtwork
+            print 'p = {}'.format(p+1)
+            #a. imprint the first p vectors on a hopfield newtwork
             self.imprint_vectors(p)
-            #c. test first p imprinted patterns for stability
+            #b. test first p imprinted patterns for stability
             self.test_vectors(p)
-            #d. Calculate stability and instability prob for each p
-
+            #c. Calculate stability and instability prob for each p
             self.calcStabilityProb(p)
 
     def getBasinSizes(self):
@@ -243,35 +222,45 @@ class HNN:
     # Step 1 of VanHornwender's Help
     # Check me on this, it may be completely wrong.
     def imprint_vectors(self, p):
+        print "Imprinting vectors"
         for i in range(self.nnsize):
             for j in range(self.nnsize):
                 if i == j:
-                    self.weights[self.vector_size * i + j] = 0
+                    self.weights[i][j] = 0
                 else:
                     state_sum = 0
-                    for k in range(p):
-                        state_sum += self.vectors[k][i] * self.vectors[k][j];
-                    self.weights[self.vector_size * i + j] = state_sum / self.nnsize
+                    for k in range(p+1):
+                        state_sum += (self.vectors[k][i] * self.vectors[k][j]);
+                    self.weights[i][j] = state_sum / self.nnsize
 
+    # sigma: because who knows how many times we may have to use it
+    # it's that polarizing function that we use litterally all the time
+    def sigma(self, h):
+        # sigma = 1 if h >= 0 and -1 if h < 0
+        sigma = 0
+        if h <= 0:
+            sigma = -1
+        if h > 0:
+            sigma = 1
+        return sigma
     #Started Step 2 of VanHornwender's Help, started to get confused here really late
     # and decided to go to bed.
     def test_vectors(self, p):
-        stable_index = 0
-        h_i = None
-        for x in range(p):
+        print "Testing vectors for stability"
+        for k in range(p+1):
             #1. Copy NN into pattern
-            self.NN = self.vectors[x];
+            self.NN = np.copy(self.vectors[k][:])
             new_neuron_state = 0
             stable_bool = True # keep track of stability
 
             #2. Compute new stat value
             for i in range(self.nnsize):
                 # h_i = sum[j-1, N]{ w[i][j] * s[j] }
-
+                h_i = 0
                 for j in range(self.nnsize):
-                    h_i +=  (self.weight[i * self.vector_size * i + j] * self.NN[j])
+                    h_i += (self.weights[i][j] * self.NN[j])
                 #s'i = sigma(h)
-                new_neuron_state = sigma(h_i)
+                new_neuron_state = self.sigma(h_i)
                 #if they don't match it wasn't stable
                 if self.NN[i] != new_neuron_state:
                     stable_bool = False
@@ -283,42 +272,45 @@ class HNN:
 
             #Determine if p is stable: if so increment
             if stable_bool:
-                self.stable[x] += 1
+                self.stable[k] += 1
                 #427/524 ONLY
-                self.calc_basin_size(x, p)
+                self.calc_basin_size(k, p)
 
     def calc_basin_size(self, k, p):
+        print "Calculating basin of attraction"
         basin = 0
         h_i = 0
         stable_bool = None
+        cur_pattern = np.copy(self.vectors[k][:])
         for run in range(5):
-            array = np.random.permuwhat tation(self.nnsize)
-            for i in range(self.num_vectors):
-                self.NN = self.vectors[k]
+            array = np.random.permutation(self.nnsize)
+            for i in range(1,self.num_vectors+1):
+                self.NN= np.copy(self.vectors[k][:])
 
                 # flip bits for NN
+                print 'flipping {} bits'.format(i)
                 for j in range(i):
                     self.NN[array[j]] *= -1
                 stable_bool = True
+                print "Testing if it still converges in 10 runs"
                 for z in range(10):
                     for x in range(self.nnsize):
                         # h_i = sum[j-1, N]{ w[i][j] * s[j] }
                         for y in range(self.nnsize):
-                            h_i +=  (self.weights[x * self.vector_size + y] * self.NN[y])
+                            h_i +=  (self.weights[x][y] * self.NN[y])
                         # s'i = sigma(h)
-                        self.NN[x] = sigma(h_i)
+                        self.NN[x] = self.sigma(h_i)
                         # if they don't match it wasn't stable
 
                 # if it doesn't converge after 10 runs then say it's false
-                if not np.array_equal(self.NN, self.vectors[k]):
+                if not np.array_equal(self.NN, cur_pattern):
+                    print 'It does not converges after fliping {} bits'.format(i)
                     stable_bool = False
                     basin += i
+                    break
 
-                #if it doesn't converge after 10 runs then say it's false
-                if not np.array_equal(self.NN, self.vectors[k])):
-                    stable_bool = False
-                    basin += i
             if stable_bool:
+                print 'It still converge after flipping 50 bits'
                 basin = 50
 
         # average basin size
@@ -332,11 +324,13 @@ if __name__ == '__main__':
 
     graph_list = []
 
+    np.set_printoptions(threshold=np.nan)
+
     parser = setup_argparser()
     args = parser.parse_args()
     experiment_number = args.experiment_number
 
-    if args.nnzise != args.vsize:
+    if args.nnsize != args.vsize:
         print "Size of Neural Network and Size of Pattern Vector must be the same."
         exit(1)
 
@@ -354,12 +348,15 @@ if __name__ == '__main__':
 
     # compute program and graph
     # initialize avg stability
-    avg_stable_prob = np.zeros(args.nvec)
-    avg_unstable_prob = np.zeros(args.nvec)
-    avg_basin_size = np.zeros((args.nvec, args.nvec))
+    print(int(args.nvec)+3)
+
+    avg_stable_prob = np.zeros(int(args.nvec))
+    avg_unstable_prob = np.zeros(int(args.nvec))
+    avg_basin_size = np.zeros((int(args.nvec), int(args.nvec)))
 
     #do several runs of experiment compute average stability
-    for i in range(args.nruns):
+    for i in range(int(args.numruns)):
+        print 'Run {}'.format(i)
         hnn = HNN(args)
         hnn.drive()
         stable_prob = hnn.getStableProb()
@@ -374,13 +371,14 @@ if __name__ == '__main__':
         avg_basin_size += basin_sizes
 
     #avg stable and unstable probs
-    avg_stable_prob /= args.nruns
-    avg_unstable_prob /= args.nruns
-    avg_basin_size /= args.nruns
+    print "Averaging ..."
+    avg_stable_prob /= int(args.nruns)
+    avg_unstable_prob /= int(args.nruns)
+    avg_basin_size /= int(args.nruns)
 
     #graph stable and unstable probs
-    avg_graph_file = plot_graph_data(experiment_number, args.nvec, avg_stable_prob, avg_unstable_prob)
+    avg_graph_file = plot_graph_data(experiment_number, int(args.nvec), avg_stable_prob, avg_unstable_prob)
     histo_file = plot_histogram(experiment_number, avg_basin_size)
 
-    create_html_page(experiment_number, graph_list, histo_list, avg_histo_file, avg_graph_file)
+    create_html_page(experiment_number, graph_list, histo_file, avg_graph_file)
 
