@@ -31,7 +31,8 @@ def setup_argparser():
     requiredArguments.add_argument('-exp', metavar='Exp_Num', dest='experiment_number', required=True, type=str, help='Number of this experiment.')
     requiredArguments.add_argument('-npat', metavar='Num_Patterns', dest='npat', required=True, type=int, help='Number of patterns.')
     requiredArguments.add_argument('-nnsize', metavar='Netw_Size', dest='nnsize', required=True, type=int, help='Size of Neural Network.')
-    requiredArguments.add_argument('-nruns', metavar='Num_Runs', dest= 'nruns', required = True, type=int, help='Number of runs of the experiment')
+    requiredArguments.add_argument('-nruns', metavar='Num_Runs', dest= 'nruns', required =True, type=int, help='Number of runs of the experiment.')
+    requiredArguments.add_argument('-dfn', metavar='Data_File_Name', dest= 'dfn', required =True, type=str, help='Data file name to save experiment data to.')
 
     return parser
 
@@ -183,34 +184,60 @@ class InvalidNetworkInputException(Exception):
     pass
 
 class Data(object):
-    def __init__(self, args):
+    def __init__(self, args, histo_file):
         self._nnsize = args.nnsize
         self._npat = args.npat
         self._exp = args.experiment_number
         self._stable = np.zeros(self._npat)
         self._basin_hist = np.zeros((self._npat, self._npat))
         self._prunstable = np.copy(self._stable)
+        self._report_data_file_name = args.dfn
+        self._histo_data_file_name = histo_file
+
     def calc_prob(self):
         stable_prob = np.zeros(self._npat)
         for p in range(self._npat):
             stable_prob[p] = self._stable[p] / (p+1)
             self._prunstable[p] = 1 - stable_prob[p]
+
     def sum(self, data):
         self._stable += data._stable
         self._prunstable += data._prunstable
         self._basin_hist += data._basin_hist
+
     def avg(self, nruns):
         self._stable /= nruns
         self._basin_hist /= nruns
         self._prunstable /= nruns
+
+    def save_report_data(self):
+        with file(data_file_name, 'w') as outfile:
+            outfile.write('# Average Stable Probability Data\n')
+            outfile.write('# Array shape {0}\n'.format(self._stable))
+            np.savetxt(outfile, self._stable, fmt='%-7.2f')
+            outfile.write('\n')
+
+            outfile.write('# Average Unstable Probability Data\n')
+            outfile.write('# Array shape {0}\n'.format(self._prunstable))
+            np.savetxt(outfile, self._prunstable, fmt='%-7.2f')
+            outfile.write('\n')
+
+            outfile.write('# Average Basin Histogram Data\n')
+            outfile.write('# Array shape {0}\n'.format(self._basin_hist))
+            np.savetxt(outfile, self._basin_hist, fmt='%-7.2f')
+            outfile.write('\n')
+
+    def save_histo_data(self):
+        np.savez(self._histo_data_file_name, self._basin_hist)
+
     def graph(self, run):
         return plot_graph_data(self._exp, self._npat, self._stable, self._prunstable, run)
+
 class HopfieldNetwork(object):
     def __init__(self, num_inputs):
         self._num_inputs = num_inputs
         #self._weights = np.zeros((num_inputs,num_inputs))
         self._weights = np.random.uniform(-1.0, 1.0, (num_inputs,num_inputs))
-
 
     def set_weights(self, weights):
         """Update the weights array"""
@@ -289,11 +316,20 @@ def basin_test(p, input_pattern, network, data, runs):
     for run in range(runs):
         converge = True
         array =  np.random.permutation(data._nnsize)
+        print "Permuted array: " + str(array)
+        print len(array)
         updated_pattern = np.copy(input_pattern)
         for i in range(1, data._npat+1):
             #flip bit:
             for j in range (i):
-                updated_pattern[array[j]] *= 1
+                bit = updated_pattern[array[j]]
+                print "Bit: %d" % bit
+                if bit == 1:
+                    updated_pattern[array[j]] = -1
+                elif bit == -1:
+                    updated_pattern[array[j]] = 1
+                print "New Bit: %d" % updated_pattern[array[j]]
+
             #updated pattern 10x
             updated_pattern = network.run(updated_pattern)
             if np.array_equal(updated_pattern, input_pattern):
@@ -313,12 +349,12 @@ def basin_test(p, input_pattern, network, data, runs):
 
 
 def experiment(args):
-    stable = np.zeros(int(args.npat))
-    input_patterns = np.random.choice([-1,1], (int(args.npat), int(args.nnsize)))
-    Hnet = HopfieldNetwork(int(args.nnsize))
+    stable = np.zeros((args.npat))
+    input_patterns = np.random.choice([-1,1], ((args.npat), (args.nnsize)))
+    Hnet = HopfieldNetwork((args.nnsize))
     #imprint weights
     data = Data(args)
-    for p in range (1, int(args.npat)+1):
+    for p in range (1, args.npat + 1):
         imprint_patterns(Hnet, input_patterns, p) #imprints the patterns
         test_patterns(p, input_patterns, Hnet, data) #run the test vectors
     data.calc_prob()
@@ -333,11 +369,11 @@ if __name__ == '__main__':
     parser = setup_argparser()
     args = parser.parse_args()
     experiment_number = args.experiment_number
+    histo_file = 'basin_histo_data.npz'
 
     # Setup directories for storing results
     if not os.path.exists('results'):
         os.makedirs('results')
-
 
     with cd('results'):
         if not os.path.exists('data'):
@@ -348,7 +384,7 @@ if __name__ == '__main__':
 
     # compute program and graph
     # initialize avg stability
-    avg_data = Data(args)
+    avg_data = Data(args, histo_file)
 
     #do several runs of experiment compute average stability
     for i in range(1, int(args.nruns) + 1):
@@ -358,7 +394,7 @@ if __name__ == '__main__':
 
     #avg stable and unstable probs
     print "Averaging ..."
-    avg_data.avg(int(args.nruns))
+    avg_data.avg(args.nruns)
 
     #graph stable and unstable probs
     #avg_graph_file = plot_graph_data(experiment_number, int(args.npat), avg_data._stable, avg_data._prunstable, 0)
