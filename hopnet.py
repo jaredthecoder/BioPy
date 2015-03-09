@@ -109,7 +109,7 @@ def plot_histogram(experiment_number, avg_basin_size):
     plt.subplot(2, 1, 1)
     for i in range(num_rows):
         label = 'p = %s' % str(i + 1)
-        plt.plot(np.arange(num_cols), normalize_data(avg_basin_size[:][i], 1), label=label)
+        plt.plot(np.arange(num_cols), normalize_data(avg_basin_size[i][:], 1), label=label)
     plt.legend(loc=0)
     plt.xlabel('B')
     plt.ylabel('Value')
@@ -227,8 +227,8 @@ class HopfieldNetwork(object):
         """Calculate the output of the network using the input data"""
         if input_pattern.shape != (self._num_inputs, ):
             raise InvalidNetworkInputException()
-        
-        sums = input_pattern.dot(self._weights)
+        weights = np.copy(self._weights)
+        sums = input_pattern.dot(weights)
         
         s = np.zeros(self._num_inputs)
         
@@ -253,7 +253,7 @@ class HopfieldNetwork(object):
             iteration_count += 1
             
             if  np.array_equal(result, last_input_pattern) or iteration_count == max_iterations:
-                return last_input_pattern
+                return result
             else:
                 last_input_pattern = result
 
@@ -286,6 +286,7 @@ def test_patterns(p, input_patterns, network, data):
     return data
 
 def basin_test(p, input_pattern, network, data, runs):
+    print "p = {}".format(p)
     basin = 0
     for run in range(runs):
         converge = True
@@ -294,10 +295,10 @@ def basin_test(p, input_pattern, network, data, runs):
         for i in range(1, data._npat+1):
             #flip bit:
             for j in range (i):
-                updated_pattern[array[j]] *= 1
+                updated_pattern[array[j]] *= -1
             #updated pattern 10x
             updated_pattern = network.run(updated_pattern)
-            if np.array_equal(updated_pattern, input_pattern):
+            if not np.array_equal(updated_pattern, input_pattern):
                 converge = False
                 basin += i
                 break
@@ -350,7 +351,7 @@ if __name__ == '__main__':
     #do several runs of experiment compute average stability
     for i in range(1, int(args.nruns) + 1):
         exp_data = experiment(args)
-        #graph_list += exp_data.graph(i)
+        graph_list += exp_data.graph(i)
         avg_data.sum(exp_data)
    
     #avg stable and unstable probs
@@ -358,8 +359,8 @@ if __name__ == '__main__':
     avg_data.avg(int(args.nruns))
 
     #graph stable and unstable probs
-    #avg_graph_file = plot_graph_data(experiment_number, int(args.npat), avg_data._stable, avg_data._prunstable, 0)
-    #histo_file = plot_histogram(experiment_number, avg_data._basin_hist)
+    avg_graph_file = plot_graph_data(experiment_number, int(args.npat), avg_data._stable, avg_data._prunstable, 0)
+    histo_file = plot_histogram(experiment_number, avg_data._basin_hist)
 
     create_html_page(experiment_number, graph_list, histo_file, avg_graph_file)
 
