@@ -8,7 +8,7 @@ def normalize_data (data, scale): #Normalization function
     B = min(data) #min of old scale
     a = 0
     b = scale
-    norm_data = data.copy()
+    norm_data = np.copy(data)
     for x in norm_data:
         x = a + (A - x) * (b - a) / (B - A)
     return norm_data
@@ -24,10 +24,10 @@ def plot_histogram(avg_basin_size):
     for i in range(num_rows):
         label = 'p = %s' % str(i + 1)
         plt.plot(np.arange(num_cols), normalize_data(avg_basin_size[i][:], 1), label=label)
-    plt.legend(loc=0)
     plt.xlabel('B')
     plt.ylabel('Value')
     plt.title('Probaility Distribution of Basin Sizes Normalized to 1')
+    plt.legend(loc=9, bbox_to_anchor=(0.5, -0.1), ncols=10)
     plt.grid()
 
     print "Basin of Attraction: Plotting basin histogram"
@@ -37,11 +37,11 @@ def plot_histogram(avg_basin_size):
         label = 'p = %s' % str(i + 1)
         plt.plot(np.arange(num_cols), normalize_data(avg_basin_size[:][i], i), label=label)
 
-    plt.legend(loc=0)
     plt.xlabel('B')
     plt.ylabel('Value')
     plt.title('Probaility Distribution of Basin Sizes Normalized to P')
     plt.grid()
+    plt.legend(loc=9, bbox_to_anchor=(0.5, -0.1), ncols=10)
     fig.tight_layout()
 
     # Save the figure
@@ -55,7 +55,7 @@ if __name__ == '__main__':
     # try to load the 2D array fromt he file
     # since it is the only structure in the file accessing all of the
     # possible file structures should give us just that array
-    histo_data = np.load(histo_file)[:]
+    histo_data = np.load(histo_file)
     plot_histogram(histo_data)
 
 

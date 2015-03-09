@@ -184,7 +184,7 @@ class InvalidNetworkInputException(Exception):
     pass
 
 class Data(object):
-    def __init__(self, args, histo_file):
+    def __init__(self, args, histo_file=None):
         self._nnsize = args.nnsize
         self._npat = args.npat
         self._exp = args.experiment_number
@@ -211,7 +211,7 @@ class Data(object):
         self._prunstable /= nruns
 
     def save_report_data(self):
-        with file(data_file_name, 'w') as outfile:
+        with file(self._data_file_name, 'w') as outfile:
             outfile.write('# Average Stable Probability Data\n')
             outfile.write('# Array shape {0}\n'.format(self._stable))
             np.savetxt(outfile, self._stable, fmt='%-7.2f')
@@ -257,7 +257,7 @@ class HopfieldNetwork(object):
 
         weights = np.copy(self._weights)
         sums = input_pattern.dot(weights)
-    
+
         s = np.zeros(self._num_inputs)
 
         for i, value in enumerate(sums):
@@ -390,6 +390,8 @@ if __name__ == '__main__':
     #avg stable and unstable probs
     print "Averaging ..."
     avg_data.avg(args.nruns)
+    avg_data.save_report_data()
+    avg_data.save_histo_data()
 
     #graph stable and unstable probs
     avg_graph_file = plot_graph_data(experiment_number, int(args.npat), avg_data._stable, avg_data._prunstable, 0)
