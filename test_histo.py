@@ -8,7 +8,7 @@ def normalize_data (data, scale): #Normalization function
     B = min(data) #min of old scale
     a = 0
     b = scale
-    norm_data = data.copy()
+    norm_data = np.copy(data)
     for x in norm_data:
         x = a + (A - x) * (b - a) / (B - A)
     return norm_data
@@ -34,8 +34,9 @@ def plot_histogram(avg_basin_size):
     # Histogram normalized to p
     plt.subplot(2, 1, 2)
     for i in range(num_rows):
+
         label = 'p = %s' % str(i + 1)
-        plt.plot(np.arange(num_cols), normalize_data(avg_basin_size[:][i], i), label=label)
+        plt.plot(np.arange(num_cols), normalize_data(avg_basin_size[i][:], i), label=label)
 
     plt.legend(loc=0)
     plt.xlabel('B')
@@ -55,7 +56,8 @@ if __name__ == '__main__':
     # try to load the 2D array fromt he file
     # since it is the only structure in the file accessing all of the
     # possible file structures should give us just that array
-    histo_data = np.load(histo_file)[:]
+    histo_data = np.load(histo_file)
+
     plot_histogram(histo_data)
 
 

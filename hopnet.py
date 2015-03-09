@@ -184,14 +184,14 @@ class InvalidNetworkInputException(Exception):
     pass
 
 class Data(object):
-    def __init__(self, args, histo_file):
+    def __init__(self, args, histo_file=None):
         self._nnsize = args.nnsize
         self._npat = args.npat
         self._exp = args.experiment_number
         self._stable = np.zeros(self._npat)
         self._basin_hist = np.zeros((self._npat, self._npat))
         self._prunstable = np.copy(self._stable)
-        self._report_data_file_name = args.dfn
+        self._data_file_name = args.dfn
         self._histo_data_file_name = histo_file
 
     def calc_prob(self):
@@ -211,7 +211,7 @@ class Data(object):
         self._prunstable /= nruns
 
     def save_report_data(self):
-        with file(data_file_name, 'w') as outfile:
+        with file(self._data_file_name, 'w') as outfile:
             outfile.write('# Average Stable Probability Data\n')
             outfile.write('# Array shape {0}\n'.format(self._stable))
             np.savetxt(outfile, self._stable, fmt='%-7.2f')
@@ -228,7 +228,7 @@ class Data(object):
             outfile.write('\n')
 
     def save_histo_data(self):
-        np.savez(self._histo_data_file_name, self._basin_hist)
+        np.save(self._histo_data_file_name, self._basin_hist)
 
     def graph(self, run):
         return plot_graph_data(self._exp, self._npat, self._stable, self._prunstable, run)
@@ -364,7 +364,7 @@ if __name__ == '__main__':
     parser = setup_argparser()
     args = parser.parse_args()
     experiment_number = args.experiment_number
-    histo_file = 'basin_histo_data.npz'
+    histo_file = 'basin_histo_data.npy'
 
     # Setup directories for storing results
     if not os.path.exists('results'):
@@ -390,6 +390,8 @@ if __name__ == '__main__':
     #avg stable and unstable probs
     print "Averaging ..."
     avg_data.avg(args.nruns)
+    avg_data.save_report_data()
+    avg_data.save_histo_data()
 
     #graph stable and unstable probs
     avg_graph_file = plot_graph_data(experiment_number, int(args.npat), avg_data._stable, avg_data._prunstable, 0)
