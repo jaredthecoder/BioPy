@@ -36,10 +36,10 @@ def setup_argparser():
                                      version='1.0.0', formatter_class=RawTextHelpFormatter)
     requiredArguments = parser.add_argument_group('required Arguments')
     requiredArguments.add_argument('-exp', metavar='Exp_Num', dest='experiment_number', required=True, type=str, help='Number of this experiment.')
-    requiredArguments.add_argument('-vsize', metavar='Vector_Size', dest='vsize', required=True, type=str, help='Size of vectors.')
-    requiredArguments.add_argument('-nvec', metavar='Num_Vectors', dest='nvec', required=True, type=str, help='Number of vectors.')
-    requiredArguments.add_argument('-nnsize', metavar='Netw_Size', dest='nnsize', required=True, type=str, help='Size of Neural Network.')
-    requiredArguments.add_argument('-numruns', metavar='Num_Runs', dest= 'nruns', required = True, type=str, help='Number of runs of the experiment')
+    requiredArguments.add_argument('-vsize', metavar='Vector_Size', dest='vsize', required=True, type=int, help='Size of vectors.')
+    requiredArguments.add_argument('-nvec', metavar='Num_Vectors', dest='nvec', required=True, type=int, help='Number of vectors.')
+    requiredArguments.add_argument('-nnsize', metavar='Netw_Size', dest='nnsize', required=True, type=int, help='Size of Neural Network.')
+    requiredArguments.add_argument('-numruns', metavar='Num_Runs', dest= 'nruns', required = True, type=int, help='Number of runs of the experiment')
 
     return parser
 
@@ -55,7 +55,7 @@ def normalize_data (data, scale): #Normalization function
 
 # Plot the results of the combined runs using matplotlib
 # I want to try to reuse this from the last lab
-def plot_graph_data(experiment_number, nvec, avg_stable_prob, avg_unstable_prob, run_no=0):
+def plot_graph_data(experiment_number, nvec, avg_stable_prob, avg_unstable_prob, run_no):
 
     run_str = ''
     p = list(xrange(int(nvec)))
@@ -63,7 +63,9 @@ def plot_graph_data(experiment_number, nvec, avg_stable_prob, avg_unstable_prob,
     root_path = 'results/data/Experiment-' + str(experiment_number)
     file_path = 'file://' + abs_path
     if run_no == 0:
-        run_str = '-run_no-' + str(run_no)
+        run_str = ''
+    else:
+        run_str = '-runnum-%s-' % str(run_no)
     path = 'Graph-for-Experiment-' + experiment_number + run_str +  '.jpg'
 
     fig = plt.figure()
@@ -72,27 +74,28 @@ def plot_graph_data(experiment_number, nvec, avg_stable_prob, avg_unstable_prob,
     print "Ploting Unstable Imprints"
     plt.subplot(2, 1, 1)
     plt.plot(p, avg_unstable_prob)
-    plt.legend(loc=0)
     plt.xlabel('p')
     plt.ylabel('Fraction of Unstable Imprints')
     if run_no == 0:
         plt.title('Overall Fraction of Unstable Imprints for %s Patterns' % nvec)
     else:
         plt.title('Fraction of Unstable Imprints for %s Patterns' % nvec)
+    plt.legend(loc=0)
     plt.grid()
 
     # Plot Stable Imprints
     print "Plotting Stable Imprints"
     plt.subplot(2, 1, 2)
     plt.plot(p, avg_stable_prob)
-    plt.legend(loc=0)
     plt.xlabel('p')
     plt.ylabel('Fraction of Stable Imprints')
     if run_no == 0:
         plt.title('Overall Fraction of Stable Imprints for %s Patters' % nvec)
     else:
         plt.title('Fraction of Stable Imprints for %s Patters' % nvec)
+    plt.legend(loc=0)
     plt.grid()
+    fig.tight_layout()
 
     # Save the figure
     fig.savefig(root_path + '/' + path)
@@ -113,7 +116,8 @@ def plot_histogram(experiment_number, avg_basin_size):
     # Histogram normalized to 1
     plt.subplot(2, 1, 1)
     for i in range(num_rows):
-        plt.plot(np.arange(num_cols), normalize_data(avg_basin_size[:][i], 1), label="p = %s" % str(i+1))
+        label = 'p = %s' % str(i + 1)
+        plt.plot(np.arange(num_cols), normalize_data(avg_basin_size[:][i], 1), label=label)
     plt.legend(loc=0)
     plt.xlabel('B')
     plt.ylabel('Value')
@@ -124,13 +128,15 @@ def plot_histogram(experiment_number, avg_basin_size):
     # Histogram normalized to p
     plt.subplot(2, 1, 2)
     for i in range(num_rows):
-        plt.plot(np.arange(num_cols), normalize_data(avg_basin_size[:][i], i), label="p = %s" % i)
+        label = 'p = %s' % str(i + 1)
+        plt.plot(np.arange(num_cols), normalize_data(avg_basin_size[:][i], i), label=label)
 
     plt.legend(loc=0)
     plt.xlabel('B')
     plt.ylabel('Value')
     plt.title('Probaility Distribution of Basin Sizes Normalized to P')
     plt.grid()
+    fig.tight_layout()
 
     # Save the figure
     fig.savefig(root_path + '/' + path)
@@ -184,12 +190,12 @@ class HNN:
     def __init__(self, args):
         print "Initializing Hopfiled"
         self.args = args
-        self.vector_size = int(args.vsize)
-        self.num_vectors = int(args.nvec)
+        self.vector_size = args.vsize
+        self.num_vectors = args.nvec
         self.vectors = np.random.choice([-1,1], (self.num_vectors, self.vector_size))
         self.stable = np.zeros((self.num_vectors)) #array of number of times a
         self.weights = np.zeros((self.vector_size, self.vector_size)) # would be better if we made a 100x100 matrix to copy to NN
-        self.nnsize = int(args.nnsize)
+        self.nnsize = args.nnsize
         self.NN = np.zeros((self.nnsize))
         self.prob_stability = np.zeros(self.num_vectors)
         self.prob_instability = np.zeros(self.num_vectors)
@@ -348,14 +354,14 @@ if __name__ == '__main__':
 
     # compute program and graph
     # initialize avg stability
-    print(int(args.nvec)+3)
+    print(args.nvec + 3)
 
-    avg_stable_prob = np.zeros(int(args.nvec))
-    avg_unstable_prob = np.zeros(int(args.nvec))
-    avg_basin_size = np.zeros((int(args.nvec), int(args.nvec)))
+    avg_stable_prob = np.zeros((args.nvec))
+    avg_unstable_prob = np.zeros((args.nvec))
+    avg_basin_size = np.zeros((args.nvec, args.nvec))
 
     #do several runs of experiment compute average stability
-    for i in range(int(args.numruns)):
+    for i in range(1, args.nruns + 1):
         print 'Run {}'.format(i)
         hnn = HNN(args)
         hnn.drive()
@@ -363,7 +369,7 @@ if __name__ == '__main__':
         unstable_prob = hnn.getInstabilityProb()
         basin_sizes = hnn.getBasinSizes()
 
-        graph_list += plot_graph_data(experiment_number, args.nvec, stable_prob, unstable_prob)
+        graph_list += plot_graph_data(experiment_number, args.nvec, stable_prob, unstable_prob, i)
 
         #sum stable and unstable probs
         avg_stable_prob += stable_prob
@@ -372,12 +378,12 @@ if __name__ == '__main__':
 
     #avg stable and unstable probs
     print "Averaging ..."
-    avg_stable_prob /= int(args.nruns)
-    avg_unstable_prob /= int(args.nruns)
-    avg_basin_size /= int(args.nruns)
+    avg_stable_prob /= args.nruns
+    avg_unstable_prob /= args.nruns
+    avg_basin_size /= args.nruns
 
     #graph stable and unstable probs
-    avg_graph_file = plot_graph_data(experiment_number, int(args.nvec), avg_stable_prob, avg_unstable_prob)
+    avg_graph_file = plot_graph_data(experiment_number, int(args.nvec), avg_stable_prob, avg_unstable_prob, 0)
     histo_file = plot_histogram(experiment_number, avg_basin_size)
 
     create_html_page(experiment_number, graph_list, histo_file, avg_graph_file)
