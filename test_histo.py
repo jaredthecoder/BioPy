@@ -34,8 +34,9 @@ def plot_histogram(avg_basin_size):
     # Histogram normalized to p
     plt.subplot(2, 1, 2)
     for i in range(num_rows):
+
         label = 'p = %s' % str(i + 1)
-        plt.plot(np.arange(num_cols), normalize_data(avg_basin_size[:][i], i), label=label)
+        plt.plot(np.arange(num_cols), normalize_data(avg_basin_size[i][:], i), label=label)
 
     plt.xlabel('B')
     plt.ylabel('Value')
