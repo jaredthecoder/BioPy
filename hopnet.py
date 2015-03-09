@@ -9,7 +9,6 @@ from argparse import RawTextHelpFormatter
 # Third party libraries
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import ndimage
 
 # Initialize the random seed
 random.seed()
@@ -51,7 +50,7 @@ def normalize_data (data, scale): #Normalization function
 def plot_graph_data(experiment_number, nvec, avg_stable_prob, avg_unstable_prob, run_no):
 
     run_str = ''
-    p = list(xrange(1, nvec + 1))
+    p = list(xrange(nvec))
     abs_path = os.path.abspath(".")
     root_path = 'results/data/Experiment-' + str(experiment_number)
     file_path = 'file://' + abs_path
@@ -83,9 +82,9 @@ def plot_graph_data(experiment_number, nvec, avg_stable_prob, avg_unstable_prob,
     plt.xlabel('p')
     plt.ylabel('Fraction of Stable Imprints')
     if run_no == 0:
-        plt.title('Overall Number of Stable Imprints for %s Patterns' % nvec)
+        plt.title('Overall Fraction of Stable Imprints for %s Patters' % nvec)
     else:
-        plt.title('Number of Stable Imprints for %s Patters' % nvec)
+        plt.title('Fraction of Stable Imprints for %s Patters' % nvec)
     plt.legend(loc=0)
     plt.grid()
     fig.tight_layout()
@@ -110,11 +109,11 @@ def plot_histogram(experiment_number, avg_basin_size):
     plt.subplot(2, 1, 1)
     for i in range(num_rows):
         label = 'p = %s' % str(i + 1)
-        plt.plot(np.arange(1, num_cols + 1), normalize_data(avg_basin_size[:][i], 1), label=label)
+        plt.plot(np.arange(num_cols), normalize_data(avg_basin_size[:][i], 1), label=label)
+    plt.legend(loc=0)
     plt.xlabel('B')
     plt.ylabel('Value')
-    plt.title('Probability Distribution of Basin Sizes Normalized to 1')
-    plt.legend(loc=9, bbox_to_anchor=(0.5, -0.1), ncols=10)
+    plt.title('Probaility Distribution of Basin Sizes Normalized to 1')
     plt.grid()
 
     print "Basin of Attraction: Plotting basin histogram"
@@ -122,12 +121,12 @@ def plot_histogram(experiment_number, avg_basin_size):
     plt.subplot(2, 1, 2)
     for i in range(num_rows):
         label = 'p = %s' % str(i + 1)
-        plt.plot(np.arange(1, num_cols + 1), normalize_data(avg_basin_size[:][i], i), label=label)
+        plt.plot(np.arange(num_cols), normalize_data(avg_basin_size[:][i], i), label=label)
 
+    plt.legend(loc=0)
     plt.xlabel('B')
     plt.ylabel('Value')
-    plt.title('Probability Distribution of Basin Sizes Normalized to P')
-    plt.legend(loc=9, bbox_to_anchor=(0.5, -0.1), ncols=10)
+    plt.title('Probaility Distribution of Basin Sizes Normalized to P')
     plt.grid()
     fig.tight_layout()
 
@@ -252,15 +251,12 @@ class HopfieldNetwork(object):
             result = self.evaluate(last_input_pattern)
 
             iteration_count += 1
-
-            if np.array_equal(result, last_input_pattern):
-                return True
-            elif iteration_count == max_iterations:
-                return False
+            if  np.array_equal(result, last_input_pattern) or iteration_count == max_iterations:
+                return last_input_pattern
             else:
                 last_input_pattern = result
 
-def hebbian_training(network, input_patterns, p):
+def imprint_patterns(network, input_patterns, p):
     """Train a network using the Hebbian learning rule"""
     num_neurons = network.get_weights().shape[0]
 
@@ -277,9 +273,11 @@ def hebbian_training(network, input_patterns, p):
     network.set_weights(weights)
 
 def test_patterns(p, input_patterns, network, data):
-    for i in range(p):
-        pattern = input_patterns[i][:]
-        if network.run(pattern, 1):
+    for k in range(p):
+        pattern = input_patterns[k][:]
+        updated_pattern = np.copy(pattern)
+        network.run(updated_pattern, 1)
+        if np.array_equal(updated_pattern, pattern):
             data._stable[p-1] +=1
             data = basin_test(p, pattern, network, data, 5)
         else:
@@ -288,16 +286,17 @@ def test_patterns(p, input_patterns, network, data):
 
 def basin_test(p, input_pattern, network, data, runs):
     basin = 0
-
     for run in range(runs):
         converge = True
-        array = np.random.permutation(data._nnsize)
-        pattern = np.copy(input_pattern)
+        array =  np.random.permutation(data._nnsize)
+        updated_pattern = np.copy(input_pattern)
         for i in range(1, data._npat+1):
             #flip bit:
             for j in range (i):
-                input_pattern[array[j]] *=1
-            if not network.run(pattern):
+                updated_pattern[array[j]] *= 1
+            #updated pattern 10x
+            updated_pattern = network.run(updated_pattern)
+            if np.array_equal(updated_pattern, input_pattern):
                 converge = False
                 print "Did not Converge: Adding %d to basin size." % i
                 basin += i
@@ -320,7 +319,7 @@ def experiment(args):
     #imprint weights
     data = Data(args)
     for p in range (1, int(args.npat)+1):
-        hebbian_training(Hnet, input_patterns, p) #imprints the patterns
+        imprint_patterns(Hnet, input_patterns, p) #imprints the patterns
         test_patterns(p, input_patterns, Hnet, data) #run the test vectors
     data.calc_prob()
     return data
@@ -354,7 +353,7 @@ if __name__ == '__main__':
     #do several runs of experiment compute average stability
     for i in range(1, int(args.nruns) + 1):
         exp_data = experiment(args)
-        graph_list += exp_data.graph(i)
+        #graph_list += exp_data.graph(i)
         avg_data.sum(exp_data)
 
     #avg stable and unstable probs
@@ -362,8 +361,8 @@ if __name__ == '__main__':
     avg_data.avg(int(args.nruns))
 
     #graph stable and unstable probs
-    avg_graph_file = plot_graph_data(experiment_number, int(args.npat), avg_data._stable, avg_data._prunstable, 0)
-    histo_file = plot_histogram(experiment_number, avg_data._basin_hist)
+    #avg_graph_file = plot_graph_data(experiment_number, int(args.npat), avg_data._stable, avg_data._prunstable, 0)
+    #histo_file = plot_histogram(experiment_number, avg_data._basin_hist)
 
     create_html_page(experiment_number, graph_list, histo_file, avg_graph_file)
 
