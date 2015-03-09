@@ -4,14 +4,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def normalize_data (data, scale): #Normalization function
-    norm_data = np.copy(data)
-    ret_data = ((norm_data) / (np.max(norm_data) / scale))
-    return ret_data
+    arr = np.copy(data)
+    np_minmax = ((arr - arr.min()) / (arr.max() - arr.min())) * scale
+    return np_minmax
 
 def plot_histogram(avg_basin_size):
 
     (num_rows, num_cols) = avg_basin_size.shape
     avg_basin_size[:][:] += 1
+    #bins = np.arange(0, num_cols)
 
     fig = plt.figure()
     # Histogram normalized to 1
@@ -19,7 +20,7 @@ def plot_histogram(avg_basin_size):
     for i in range(1, num_rows + 1):
         if i % 2 == 0:
             label = 'p = %s' % str(i + 1)
-            plt.plot(np.arange(1, num_cols + 1), normalize_data(avg_basin_size[i-1][:], 1), label=label)
+            plt.hist(avg_basin_size[i - 1][:], num_cols, normed=True, alpha=0.5)
     plt.xlabel('B')
     plt.ylabel('Value')
     plt.title('Probability Distribution of Basin Sizes Normalized to 1')
@@ -31,8 +32,7 @@ def plot_histogram(avg_basin_size):
     for i in range(1, num_rows + 1):
         if i % 2 == 0:
             label = 'p = %s' % str(i + 1)
-            plt.plot(np.arange(1, num_cols + 1), normalize_data(avg_basin_size[i-1][:], i), label=label)
-
+            plt.hist(avg_basin_size[i - 1][:], num_cols, normed=True, alpha=0.5)
     plt.xlabel('B')
     plt.ylabel('Value')
     plt.title('Probability Distribution of Basin Sizes Normalized to P')

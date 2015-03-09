@@ -38,7 +38,9 @@ def setup_argparser():
     return parser
 
 def normalize_data (data, scale): #Normalization function
-
+    arr = np.copy(data)
+    np_minmax = ((arr - arr.min()) / (arr.max() - arr.min())) * scale
+    return np_minmax
 
 # Plot the results of the combined runs using matplotlib
 # I want to try to reuse this from the last lab
@@ -106,8 +108,6 @@ def plot_histogram(experiment_number, avg_basin_size):
     for i in range(1, num_rows + 1):
         if i % 2 == 0:
             label = 'p = %s' % str(i + 1)
-            print np.arange(0, num_cols + 1)
-            print normalize_data(avg_basin_size[i-1][:], 1)
             plt.plot(np.arange(0, num_cols), normalize_data(avg_basin_size[i-1][:], 1), label=label)
     plt.xlabel('B')
     plt.ylabel('Value')
