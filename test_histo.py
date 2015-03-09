@@ -4,50 +4,44 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def normalize_data (data, scale): #Normalization function
-    A = max(data) #max of old scale
-    B = min(data) #min of old scale
-    a = 0
-    b = scale
     norm_data = np.copy(data)
-    for x in norm_data:
-        x = a + (A - x) * (b - a) / (B - A)
+    ret_data = ((norm_data) / (np.max(norm_data) / scale))
     return norm_data
 
 def plot_histogram(avg_basin_size):
 
     (num_rows, num_cols) = avg_basin_size.shape
+    avg_basin_size[:][:] += 1
 
     fig = plt.figure()
-    print "Basin of Attraction: Plotting basin probability dirstribution"
     # Histogram normalized to 1
     plt.subplot(2, 1, 1)
-    for i in range(num_rows):
-        label = 'p = %s' % str(i + 1)
-        plt.plot(np.arange(num_cols), normalize_data(avg_basin_size[i][:], 1), label=label)
+    for i in range(1, num_rows + 1):
+        if i % 2 == 0:
+            label = 'p = %s' % str(i + 1)
+            plt.plot(np.arange(1, num_cols + 1), normalize_data(avg_basin_size[i-1][:], 1), label=label)
     plt.xlabel('B')
     plt.ylabel('Value')
-    plt.title('Probaility Distribution of Basin Sizes Normalized to 1')
-    plt.legend(loc=9, bbox_to_anchor=(0.5, -0.1), ncols=10)
+    plt.title('Probability Distribution of Basin Sizes Normalized to 1')
+    #plt.legend(loc=9, bbox_to_anchor=(0.5, -0.1), ncol=10)
     plt.grid()
 
-    print "Basin of Attraction: Plotting basin histogram"
     # Histogram normalized to p
     plt.subplot(2, 1, 2)
-    for i in range(num_rows):
-
-        label = 'p = %s' % str(i + 1)
-        plt.plot(np.arange(num_cols), normalize_data(avg_basin_size[i][:], i), label=label)
+    for i in range(1, num_rows + 1):
+        if i % 2 == 0:
+            label = 'p = %s' % str(i + 1)
+            plt.plot(np.arange(1, num_cols + 1), normalize_data(avg_basin_size[i-1][:], i + 1), label=label)
 
     plt.xlabel('B')
     plt.ylabel('Value')
-    plt.title('Probaility Distribution of Basin Sizes Normalized to P')
+    plt.title('Probability Distribution of Basin Sizes Normalized to P')
     plt.grid()
-    plt.legend(loc=9, bbox_to_anchor=(0.5, -0.1), ncols=10)
-    fig.tight_layout()
+    #plt.legend(loc=9, bbox_to_anchor=(0.5, -0.1), ncol=10)
 
     # Save the figure
+    fig.tight_layout()
     fig.savefig('histo_file.jpg')
-    fig.show()
 
 if __name__ == '__main__':
 
