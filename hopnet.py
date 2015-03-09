@@ -9,6 +9,7 @@ from argparse import RawTextHelpFormatter
 # Third party libraries
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy import ndimage
 
 # Initialize the random seed
 random.seed()
@@ -50,7 +51,7 @@ def normalize_data (data, scale): #Normalization function
 def plot_graph_data(experiment_number, nvec, avg_stable_prob, avg_unstable_prob, run_no):
 
     run_str = ''
-    p = list(xrange(nvec))
+    p = list(xrange(1, nvec + 1))
     abs_path = os.path.abspath(".")
     root_path = 'results/data/Experiment-' + str(experiment_number)
     file_path = 'file://' + abs_path
@@ -82,9 +83,9 @@ def plot_graph_data(experiment_number, nvec, avg_stable_prob, avg_unstable_prob,
     plt.xlabel('p')
     plt.ylabel('Fraction of Stable Imprints')
     if run_no == 0:
-        plt.title('Overall Fraction of Stable Imprints for %s Patters' % nvec)
+        plt.title('Overall Number of Stable Imprints for %s Patterns' % nvec)
     else:
-        plt.title('Fraction of Stable Imprints for %s Patters' % nvec)
+        plt.title('Number of Stable Imprints for %s Patters' % nvec)
     plt.legend(loc=0)
     plt.grid()
     fig.tight_layout()
@@ -109,11 +110,11 @@ def plot_histogram(experiment_number, avg_basin_size):
     plt.subplot(2, 1, 1)
     for i in range(num_rows):
         label = 'p = %s' % str(i + 1)
-        plt.plot(np.arange(num_cols), normalize_data(avg_basin_size[:][i], 1), label=label)
-    plt.legend(loc=0)
+        plt.plot(np.arange(1, num_cols + 1), normalize_data(avg_basin_size[:][i], 1), label=label)
     plt.xlabel('B')
     plt.ylabel('Value')
-    plt.title('Probaility Distribution of Basin Sizes Normalized to 1')
+    plt.title('Probability Distribution of Basin Sizes Normalized to 1')
+    plt.legend(loc=9, bbox_to_anchor=(0.5, -0.1), ncols=10)
     plt.grid()
 
     print "Basin of Attraction: Plotting basin histogram"
@@ -121,12 +122,12 @@ def plot_histogram(experiment_number, avg_basin_size):
     plt.subplot(2, 1, 2)
     for i in range(num_rows):
         label = 'p = %s' % str(i + 1)
-        plt.plot(np.arange(num_cols), normalize_data(avg_basin_size[:][i], i), label=label)
+        plt.plot(np.arange(1, num_cols + 1), normalize_data(avg_basin_size[:][i], i), label=label)
 
-    plt.legend(loc=0)
     plt.xlabel('B')
     plt.ylabel('Value')
-    plt.title('Probaility Distribution of Basin Sizes Normalized to P')
+    plt.title('Probability Distribution of Basin Sizes Normalized to P')
+    plt.legend(loc=9, bbox_to_anchor=(0.5, -0.1), ncols=10)
     plt.grid()
     fig.tight_layout()
 
@@ -205,53 +206,53 @@ class Data(object):
         self._prunstable /= nruns
     def graph(self, run):
         return plot_graph_data(self._exp, self._npat, self._stable, self._prunstable, run)
-class HopfieldNetwork(object):  
+class HopfieldNetwork(object):
     def __init__(self, num_inputs):
         self._num_inputs = num_inputs
         #self._weights = np.zeros((num_inputs,num_inputs))
         self._weights = np.random.uniform(-1.0, 1.0, (num_inputs,num_inputs))
-    
+
 
     def set_weights(self, weights):
         """Update the weights array"""
         if weights.shape != (self._num_inputs, self._num_inputs):
             raise InvalidWeightsException()
-        
+
         self._weights = weights
-    
+
     def get_weights(self):
         """Return the weights array"""
         return self._weights
-    
+
     def evaluate(self, input_pattern):
         """Calculate the output of the network using the input data"""
         if input_pattern.shape != (self._num_inputs, ):
             raise InvalidNetworkInputException()
-        
+
         sums = input_pattern.dot(self._weights)
-        
+
         s = np.zeros(self._num_inputs)
-        
+
         for i, value in enumerate(sums):
             if value > 0:
                 s[i] = 1
             else:
                 s[i] = -1
-        
-        return s 
-        
+
+        return s
+
     def run(self, input_pattern, max_iterations=10):
-        """Run the network using the input data until the output state doesn't change 
+        """Run the network using the input data until the output state doesn't change
         or a maximum number of iteration has been reached."""
         last_input_pattern = input_pattern
-        
+
         iteration_count = 0
-        
+
         while True:
             result = self.evaluate(last_input_pattern)
-            
+
             iteration_count += 1
-            
+
             if  np.array_equal(result, last_input_pattern):
                 return True
             elif iteration_count == max_iterations:
@@ -262,20 +263,20 @@ class HopfieldNetwork(object):
 def hebbian_training(network, input_patterns, p):
     """Train a network using the Hebbian learning rule"""
     num_neurons = network.get_weights().shape[0]
-    
+
     weights = np.zeros((num_neurons, num_neurons))
-    
+
     for i in range(num_neurons):
         for j in range(num_neurons):
             if i == j: continue
             for m in range(p):
                 weights[i, j] += input_patterns[m][i] * input_patterns[m][j]
-                
+
     weights *= 1/float(network._num_inputs)
-    
+
     network.set_weights(weights)
 
-def test_patterns(p, input_patterns, network, data): 
+def test_patterns(p, input_patterns, network, data):
     for i in range(p):
         pattern = input_patterns[i][:]
         if network.run(pattern, 1):
@@ -287,9 +288,10 @@ def test_patterns(p, input_patterns, network, data):
 
 def basin_test(p, input_pattern, network, data, runs):
     basin = 0
-    converge = True
+
     for run in range(runs):
-        array= np.random.array = np.random.permutation(data._nnsize)
+        converge = True
+        array = np.random.permutation(data._nnsize)
         pattern = np.copy(input_pattern)
         for i in range(1, data._npat+1):
             #flip bit:
@@ -305,18 +307,18 @@ def basin_test(p, input_pattern, network, data, runs):
     data._basin_hist[p-1][basin-1] += 1
     return data
 
-        
+
 def experiment(args):
     stable = np.zeros(int(args.npat))
     input_patterns = np.random.choice([-1,1], (int(args.npat), int(args.nnsize)))
     Hnet = HopfieldNetwork(int(args.nnsize))
-    #imprint weights    
+    #imprint weights
     data = Data(args)
     for p in range (1, int(args.npat)+1):
         hebbian_training(Hnet, input_patterns, p) #imprints the patterns
         test_patterns(p, input_patterns, Hnet, data) #run the test vectors
     data.calc_prob()
-    return data    
+    return data
 
 if __name__ == '__main__':
 
@@ -349,7 +351,7 @@ if __name__ == '__main__':
         exp_data = experiment(args)
         graph_list += exp_data.graph(i)
         avg_data.sum(exp_data)
-   
+
     #avg stable and unstable probs
     print "Averaging ..."
     avg_data.avg(int(args.nruns))
