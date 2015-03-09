@@ -253,7 +253,7 @@ class HopfieldNetwork(object):
 
             iteration_count += 1
 
-            if  np.array_equal(result, last_input_pattern):
+            if np.array_equal(result, last_input_pattern):
                 return True
             elif iteration_count == max_iterations:
                 return False
@@ -299,11 +299,16 @@ def basin_test(p, input_pattern, network, data, runs):
                 input_pattern[array[j]] *=1
             if not network.run(pattern):
                 converge = False
+                print "Did not Converge: Adding %d to basin size." % i
                 basin += i
+                print "New Basin Size: %d" % basin
+                print "Breaking now."
                 break
         if converge:
+            print "Converged: adding 50 to basin size."
             basin += 50
     basin = round((basin/runs), 0)
+    print "Basin Size: %s" % basin
     data._basin_hist[p-1][basin-1] += 1
     return data
 
