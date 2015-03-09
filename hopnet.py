@@ -1,10 +1,3 @@
-'''
-    Hopfield Neural Network Implementation in Python
-
-    Authors: David Cunningham and Jared Smith
-
-'''
-
 # Built-in Python libraries
 import os
 import random
@@ -36,10 +29,9 @@ def setup_argparser():
                                      version='1.0.0', formatter_class=RawTextHelpFormatter)
     requiredArguments = parser.add_argument_group('required Arguments')
     requiredArguments.add_argument('-exp', metavar='Exp_Num', dest='experiment_number', required=True, type=str, help='Number of this experiment.')
-    requiredArguments.add_argument('-vsize', metavar='Vector_Size', dest='vsize', required=True, type=int, help='Size of vectors.')
-    requiredArguments.add_argument('-nvec', metavar='Num_Vectors', dest='nvec', required=True, type=int, help='Number of vectors.')
+    requiredArguments.add_argument('-npat', metavar='Num_Patterns', dest='npat', required=True, type=int, help='Number of patterns.')
     requiredArguments.add_argument('-nnsize', metavar='Netw_Size', dest='nnsize', required=True, type=int, help='Size of Neural Network.')
-    requiredArguments.add_argument('-numruns', metavar='Num_Runs', dest= 'nruns', required = True, type=int, help='Number of runs of the experiment')
+    requiredArguments.add_argument('-nruns', metavar='Num_Runs', dest= 'nruns', required = True, type=int, help='Number of runs of the experiment')
 
     return parser
 
@@ -58,7 +50,7 @@ def normalize_data (data, scale): #Normalization function
 def plot_graph_data(experiment_number, nvec, avg_stable_prob, avg_unstable_prob, run_no):
 
     run_str = ''
-    p = list(xrange(int(nvec)))
+    p = list(xrange(nvec))
     abs_path = os.path.abspath(".")
     root_path = 'results/data/Experiment-' + str(experiment_number)
     file_path = 'file://' + abs_path
@@ -184,148 +176,148 @@ def create_html_page(experiment_number, graph_list, histofile, avg_graph_file):
     with open(html_filename, 'w') as hf:
         hf.write(html_string)
 
-class HNN:
+class InvalidWeightsException(Exception):
+    pass
 
-    # Initialized at insatiation of class
+class InvalidNetworkInputException(Exception):
+    pass
+
+class Data(object):
     def __init__(self, args):
-        print "Initializing Hopfiled"
-        self.args = args
-        self.vector_size = args.vsize
-        self.num_vectors = args.nvec
-        self.vectors = np.random.choice([-1,1], (self.num_vectors, self.vector_size))
-        self.stable = np.zeros((self.num_vectors)) #array of number of times a
-        self.weights = np.zeros((self.vector_size, self.vector_size)) # would be better if we made a 100x100 matrix to copy to NN
-        self.nnsize = args.nnsize
-        self.NN = np.zeros((self.nnsize))
-        self.prob_stability = np.zeros(self.num_vectors)
-        self.prob_instability = np.zeros(self.num_vectors)
-        self.basin_sizes = np.zeros((self.num_vectors, self.num_vectors))
+        self._nnsize = args.nnsize
+        self._npat = args.npat
+        self._exp = args.experiment_number
+        self._stable = np.zeros(self._npat)
+        self._basin_hist = np.zeros((self._npat, self._npat))
+        self._prunstable = np.copy(self._stable)
+    def calc_prob(self):
+        stable_prob = np.zeros(self._npat)
+        for p in range(self._npat):
+            stable_prob[p] = self._stable[p] / (p+1)
+            self._prunstable[p] = 1 - stable_prob[p]
+    def sum(self, data):
+        self._stable += data._stable
+        self._prunstable += data._prunstable
+        self._basin_hist += data._basin_hist
+    def avg(self, nruns):
+        self._stable /= nruns
+        self._basin_hist /= nruns
+        self._prunstable /= nruns
+    def graph(self, run):
+        return plot_graph_data(self._exp, self._npat, self._stable, self._prunstable, run)
+class HopfieldNetwork(object):  
+    def __init__(self, num_inputs):
+        self._num_inputs = num_inputs
+        #self._weights = np.zeros((num_inputs,num_inputs))
+        self._weights = np.random.uniform(-1.0, 1.0, (num_inputs,num_inputs))
+    
 
-    def calcStabilityProb(self, p):
-        print "Calculating Probability of stability"
-        self.prob_stability[p] = self.stable[p] / (p+1)
-        self.prob_instability[p] = 1 - self.prob_stability[p]
+    def set_weights(self, weights):
+        """Update the weights array"""
+        if weights.shape != (self._num_inputs, self._num_inputs):
+            raise InvalidWeightsException()
+        
+        self._weights = weights
+    
+    def get_weights(self):
+        """Return the weights array"""
+        return self._weights
+    
+    def evaluate(self, input_pattern):
+        """Calculate the output of the network using the input data"""
+        if input_pattern.shape != (self._num_inputs, ):
+            raise InvalidNetworkInputException()
+        
+        sums = input_pattern.dot(self._weights)
+        
+        s = np.zeros(self._num_inputs)
+        
+        for i, value in enumerate(sums):
+            if value > 0:
+                s[i] = 1
+            else:
+                s[i] = -1
+        
+        return s 
+        
+    def run(self, input_pattern, max_iterations=10):
+        """Run the network using the input data until the output state doesn't change 
+        or a maximum number of iteration has been reached."""
+        last_input_pattern = input_pattern
+        
+        iteration_count = 0
+        
+        while True:
+            result = self.evaluate(last_input_pattern)
+            
+            iteration_count += 1
+            
+            if  np.array_equal(result, last_input_pattern):
+                return True
+            elif iteration_count == max_iterations:
+                return False
+            else:
+                last_input_pattern = result
 
-    def getStableProb(self):
-        return self.prob_stability
+def hebbian_training(network, input_patterns, p):
+    """Train a network using the Hebbian learning rule"""
+    num_neurons = network.get_weights().shape[0]
+    
+    weights = np.zeros((num_neurons, num_neurons))
+    
+    for i in range(num_neurons):
+        for j in range(num_neurons):
+            if i == j: continue
+            for m in range(p):
+                weights[i, j] += input_patterns[m][i] * input_patterns[m][j]
+                
+    weights *= 1/float(network._num_inputs)
+    
+    network.set_weights(weights)
 
-    def getInstabilityProb(self):
-        return self.prob_instability
+def test_patterns(p, input_patterns, network, data): 
+    for i in range(p):
+        pattern = input_patterns[i][:]
+        if network.run(pattern, 1):
+            data._stable[p-1] +=1
+            data = basin_test(p, pattern, network, data, 5)
+        else:
+            data._basin_hist[p-1][0]+=1
+    return data
 
-    def drive(self): #driver for calculating stability (COSC 420)
-        for p in range(self.num_vectors):
-            print 'p = {}'.format(p+1)
-            #a. imprint the first p vectors on a hopfield newtwork
-            self.imprint_vectors(p)
-            #b. test first p imprinted patterns for stability
-            self.test_vectors(p)
-            #c. Calculate stability and instability prob for each p
-            self.calcStabilityProb(p)
+def basin_test(p, input_pattern, network, data, runs):
+    basin = 0
+    converge = True
+    for run in range(runs):
+        array= np.random.array = np.random.permutation(data._nnsize)
+        pattern = np.copy(input_pattern)
+        for i in range(1, data._npat+1):
+            #flip bit:
+            for j in range (i):
+                input_pattern[array[j]] *=1
+            if not network.run(pattern):
+                converge = False
+                basin += i
+                break
+        if converge:
+            basin += 50
+    basin = round((basin/runs), 0)
+    data._basin_hist[p-1][basin-1] += 1
+    return data
 
-    def getBasinSizes(self):
-        return self.basin_sizes
+        
+def experiment(args):
+    stable = np.zeros(int(args.npat))
+    input_patterns = np.random.choice([-1,1], (int(args.npat), int(args.nnsize)))
+    Hnet = HopfieldNetwork(int(args.nnsize))
+    #imprint weights    
+    data = Data(args)
+    for p in range (1, int(args.npat)+1):
+        hebbian_training(Hnet, input_patterns, p) #imprints the patterns
+        test_patterns(p, input_patterns, Hnet, data) #run the test vectors
+    data.calc_prob()
+    return data    
 
-    # Step 1 of VanHornwender's Help
-    # Check me on this, it may be completely wrong.
-    def imprint_vectors(self, p):
-        print "Imprinting vectors"
-        for i in range(self.nnsize):
-            for j in range(self.nnsize):
-                if i == j:
-                    self.weights[i][j] = 0
-                else:
-                    state_sum = 0
-                    for k in range(p+1):
-                        state_sum += (self.vectors[k][i] * self.vectors[k][j]);
-                    self.weights[i][j] = state_sum / self.nnsize
-
-    # sigma: because who knows how many times we may have to use it
-    # it's that polarizing function that we use litterally all the time
-    def sigma(self, h):
-        # sigma = 1 if h >= 0 and -1 if h < 0
-        sigma = 0
-        if h <= 0:
-            sigma = -1
-        if h > 0:
-            sigma = 1
-        return sigma
-    #Started Step 2 of VanHornwender's Help, started to get confused here really late
-    # and decided to go to bed.
-    def test_vectors(self, p):
-        print "Testing vectors for stability"
-        for k in range(p+1):
-            #1. Copy NN into pattern
-            self.NN = np.copy(self.vectors[k][:])
-            new_neuron_state = 0
-            stable_bool = True # keep track of stability
-
-            #2. Compute new stat value
-            for i in range(self.nnsize):
-                # h_i = sum[j-1, N]{ w[i][j] * s[j] }
-                h_i = 0
-                for j in range(self.nnsize):
-                    h_i += (self.weights[i][j] * self.NN[j])
-                #s'i = sigma(h)
-                new_neuron_state = self.sigma(h_i)
-                #if they don't match it wasn't stable
-                if self.NN[i] != new_neuron_state:
-                    stable_bool = False
-                    #427/524 ONLY
-                    self.basin_sizes[p][0] += 1
-
-
-                self.NN[i] = new_neuron_state
-
-            #Determine if p is stable: if so increment
-            if stable_bool:
-                self.stable[k] += 1
-                #427/524 ONLY
-                self.calc_basin_size(k, p)
-
-    def calc_basin_size(self, k, p):
-        print "Calculating basin of attraction"
-        basin = 0
-        h_i = 0
-        stable_bool = None
-        cur_pattern = np.copy(self.vectors[k][:])
-        for run in range(5):
-            array = np.random.permutation(self.nnsize)
-            for i in range(1,self.num_vectors+1):
-                self.NN= np.copy(self.vectors[k][:])
-
-                # flip bits for NN
-                print 'flipping {} bits'.format(i)
-                for j in range(i):
-                    self.NN[array[j]] *= -1
-                stable_bool = True
-                print "Testing if it still converges in 10 runs"
-                for z in range(10):
-                    for x in range(self.nnsize):
-                        # h_i = sum[j-1, N]{ w[i][j] * s[j] }
-                        for y in range(self.nnsize):
-                            h_i +=  (self.weights[x][y] * self.NN[y])
-                        # s'i = sigma(h)
-                        self.NN[x] = self.sigma(h_i)
-                        # if they don't match it wasn't stable
-
-                # if it doesn't converge after 10 runs then say it's false
-                if not np.array_equal(self.NN, cur_pattern):
-                    print 'It does not converges after fliping {} bits'.format(i)
-                    stable_bool = False
-                    basin += i
-                    break
-
-            if stable_bool:
-                print 'It still converge after flipping 50 bits'
-                basin = 50
-
-        # average basin size
-        basin /= 5
-
-        self.basin_sizes[p][round(basin, 0)] += 1
-
-
-# Main
 if __name__ == '__main__':
 
     graph_list = []
@@ -335,10 +327,6 @@ if __name__ == '__main__':
     parser = setup_argparser()
     args = parser.parse_args()
     experiment_number = args.experiment_number
-
-    if args.nnsize != args.vsize:
-        print "Size of Neural Network and Size of Pattern Vector must be the same."
-        exit(1)
 
     # Setup directories for storing results
     if not os.path.exists('results'):
@@ -354,37 +342,21 @@ if __name__ == '__main__':
 
     # compute program and graph
     # initialize avg stability
-    print(args.nvec + 3)
-
-    avg_stable_prob = np.zeros((args.nvec))
-    avg_unstable_prob = np.zeros((args.nvec))
-    avg_basin_size = np.zeros((args.nvec, args.nvec))
+    avg_data = Data(args)
 
     #do several runs of experiment compute average stability
-    for i in range(1, args.nruns + 1):
-        print 'Run {}'.format(i)
-        hnn = HNN(args)
-        hnn.drive()
-        stable_prob = hnn.getStableProb()
-        unstable_prob = hnn.getInstabilityProb()
-        basin_sizes = hnn.getBasinSizes()
-
-        graph_list += plot_graph_data(experiment_number, args.nvec, stable_prob, unstable_prob, i)
-
-        #sum stable and unstable probs
-        avg_stable_prob += stable_prob
-        avg_unstable_prob += unstable_prob
-        avg_basin_size += basin_sizes
-
+    for i in range(1, int(args.nruns) + 1):
+        exp_data = experiment(args)
+        graph_list += exp_data.graph(i)
+        avg_data.sum(exp_data)
+   
     #avg stable and unstable probs
     print "Averaging ..."
-    avg_stable_prob /= args.nruns
-    avg_unstable_prob /= args.nruns
-    avg_basin_size /= args.nruns
+    avg_data.avg(int(args.nruns))
 
     #graph stable and unstable probs
-    avg_graph_file = plot_graph_data(experiment_number, int(args.nvec), avg_stable_prob, avg_unstable_prob, 0)
-    histo_file = plot_histogram(experiment_number, avg_basin_size)
+    avg_graph_file = plot_graph_data(experiment_number, int(args.npat), avg_data._stable, avg_data._prunstable, 0)
+    histo_file = plot_histogram(experiment_number, avg_data._basin_hist)
 
     create_html_page(experiment_number, graph_list, histo_file, avg_graph_file)
 
