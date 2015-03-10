@@ -34,13 +34,24 @@ def setup_argparser():
     requiredArguments.add_argument('-nnsize', metavar='Netw_Size', dest='nnsize', required=True, type=int, help='Size of Neural Network.')
     requiredArguments.add_argument('-nruns', metavar='Num_Runs', dest= 'nruns', required =True, type=int, help='Number of runs of the experiment.')
     requiredArguments.add_argument('-dfn', metavar='Data_File_Name', dest= 'dfn', required =True, type=str, help='Data file name to save experiment data to.')
+    requiredArguments.add_argument('-hfn', metavar='Histo_File_Name', dest= 'hfn', required =True, type=str, help='Data file name to save histogram data to.')
+
 
     return parser
 
-def normalize_data (data, scale): #Normalization function
-    arr = np.copy(data)
-    np_minmax = ((arr - arr.min()) / (arr.max() - arr.min())) * scale
-    return np_minmax
+def getpeak(data):
+    peak_y = np.max(data)
+    peak_x = np.argmax(data)
+    return peak_x, peak_y
+
+def normalize_data (data, scale, p): #Normalization function
+    norm_data = data.copy()
+    b = np.min(norm_data)
+    norm_data -= b #set bottom to zero
+    norm_data /= p #get probability distribution
+    norm_data *= scale
+
+    return norm_data
 
 # Plot the results of the combined runs using matplotlib
 # I want to try to reuse this from the last lab
@@ -91,41 +102,53 @@ def plot_graph_data(experiment_number, nvec, avg_stable_prob, avg_unstable_prob,
 
     return file_path + '/' + root_path + '/' + path
 
-def plot_histogram(experiment_number, avg_basin_size):
+def plot_histogram(avg_basin_size, experiment_number):
 
     (num_rows, num_cols) = avg_basin_size.shape
+    avg_basin_size[:][:] += 1
 
     abs_path = os.path.abspath(".")
     root_path = 'results/data/Experiment-' + str(experiment_number)
     file_path = 'file://' + abs_path
     path = 'Histogram-for-Experiment-' + experiment_number + '.jpg'
 
-    avg_basin_size[:][:] += 1
-
     fig = plt.figure()
     # Histogram normalized to 1
     plt.subplot(2, 1, 1)
     for i in range(1, num_rows + 1):
-        if i % 2 == 0:
-            label = 'p = %s' % str(i + 1)
-            plt.plot(np.arange(0, num_cols), normalize_data(avg_basin_size[i-1][:], 1), label=label)
+        if i % 2 == 1:
+            text_str = '%d' % ((i + 1))
+            n = normalize_data(avg_basin_size[i-1][:], 1, i)
+            peak_x, peak_y = getpeak(n)
+            plt.plot(np.arange(0, num_cols), n)
+            #label
+            if peak_y < 1.0 and peak_x > 1:
+                plt.text(peak_x, peak_y+.1, text_str)
+
     plt.xlabel('B')
     plt.ylabel('Value')
     plt.title('Probability Distribution of Basin Sizes Normalized to 1')
     #plt.legend(loc=9, bbox_to_anchor=(0.5, -0.1), ncol=10)
     plt.grid()
+    plt.ylim(0, 1.3)
 
     # Histogram normalized to p
     plt.subplot(2, 1, 2)
     for i in range(1, num_rows + 1):
-        if i % 2 == 0:
-            label = 'p = %s' % str(i + 1)
-            plt.plot(np.arange(0, num_cols), normalize_data(avg_basin_size[i-1][:], i), label=label)
+        if i % 2 == 1:
+            text_str = '%d' % ((i + 1))
+            n = normalize_data(avg_basin_size[i-1][:], i, i)
+            peak_x, peak_y = getpeak(n)
+            plt.plot(np.arange(0, num_cols), n)
+            #lable
+            if peak_y < 4.3 and peak_x > 1:
+                plt.text(peak_x, peak_y+.1, text_str)
 
     plt.xlabel('B')
     plt.ylabel('Value')
     plt.title('Probability Distribution of Basin Sizes Normalized to P')
     plt.grid()
+    plt.ylim(0,4.5)
     #plt.legend(loc=9, bbox_to_anchor=(0.5, -0.1), ncol=10)
 
     # Save the figure
@@ -316,8 +339,7 @@ if __name__ == '__main__':
     parser = setup_argparser()
     args = parser.parse_args()
     experiment_number = args.experiment_number
-    histo_file = 'basin_histo_data.npy'
-
+    histo_file = 'results/data/Experiment-%s/%s' % (experiment_number, args.hfn)
     # Setup directories for storing results
     if not os.path.exists('results'):
         os.makedirs('results')
@@ -340,7 +362,6 @@ if __name__ == '__main__':
         avg_data.sum(exp_data)
 
     #avg stable and unstable probs
-    #print "Averaging ..."
     avg_data.avg(args.nruns)
     print avg_data._stable
     print avg_data._prunstable
@@ -349,8 +370,7 @@ if __name__ == '__main__':
     avg_data.save_histo_data()
 
     #graph stable and unstable probs
-    avg_graph_file = plot_graph_data(experiment_number, int(args.npat), avg_data._stable, avg_data._prunstable, 0)
-    histo_file = plot_histogram(experiment_number, avg_data._basin_hist)
+    avg_graph_file = plot_graph_data(experiment_number, args.npat, avg_data._stable, avg_data._prunstable, 0)
+    histo_file = plot_histogram(avg_data._basin_hist, experiment_number)
 
-    #create_html_page(experiment_number, graph_list, histo_file, avg_graph_file)
 
