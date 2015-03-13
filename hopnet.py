@@ -107,7 +107,7 @@ def plot_graph_data(experiment_number, nvec, avg_stable_prob, avg_unstable_prob,
     plt.xlabel('p')
     plt.ylabel('Fraction of Stable Imprints')
     if run_no == 0:
-        plt.title('Overall Fraction of Stable Imprints for %s Patters' % nvec)
+        plt.title('Overall Fraction of Stable Imprints for %s Patterns' % nvec)
     else:
         plt.title('Fraction of Stable Imprints for %s Patters' % nvec)
     plt.legend(loc=0)
