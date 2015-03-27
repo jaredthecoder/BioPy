@@ -1,0 +1,5 @@
+numpy==1.9.2
+sklearn==0.15.2
+scipy==0.15.1
+matplotlib==1.4.3
+
