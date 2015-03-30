@@ -86,7 +86,7 @@ def test_regression(plots=False):
     # Run the network
     NN = NeuralNetwork(parameters)
     NN.train(X, y, 4000, learning_rate=learning_rate)
-    predictions.append([learning_rate, N.predict(X)])
+    predictions.append([learning_rate, NN.predict(X)])
 
 
     # Plotting 
@@ -199,7 +199,7 @@ def test_handwritten_digits(plots=False):
     for i in range(X_test.shape[0]):
         o = NN.predict_x(X_test[i])
         predictions.append(np.argmax(o))
-    
+
     print confusion_matrix(y_test, predictions)
     print classification_report(y_test, predictions)
 
