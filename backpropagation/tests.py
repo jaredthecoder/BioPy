@@ -199,7 +199,7 @@ def test_handwritten_digits(plots=False):
     for i in range(X_test.shape[0]):
         o = NN.predict_x(X_test[i])
         predictions.append(np.argmax(o))
-
+    
     print confusion_matrix(y_test, predictions)
     print classification_report(y_test, predictions)
 
@@ -229,6 +229,8 @@ if __name__ == "__main__":
         test_regression(True)
     elif test_type == 'c':
         test_classification(True)
+    elif test_type == 'd':
+        test_handwritten_digits(True)
     else:
         print "Bad Command. Try 'r' or 'c'"
 
