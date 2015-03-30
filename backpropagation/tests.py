@@ -15,8 +15,12 @@ import argparse
 from argparse import RawTextHelpFormatter
 
 # 3rd-Party libraries
-import sklearn as sk
 import numpy as np
+import sklearn as sk
+from sklearn.cross_validation import train_test_split
+from sklearn.datasets import load_digits
+from sklearn.metrics import confusion_matrix, classification_report
+from sklearn.preprocessing import LabelBinarizer
 from scipy.special import expit
 
 # Project specific libraries
@@ -77,11 +81,11 @@ def test_regression(plots=False):
     y = np.sin(X)
 
     # Make the network structure parameters, see network.py parameters variable for how to structure
-    layers = ((1, 0, 0), (20, expit, logistic_prime), (20, expit, logistic_prime), (1, identity, identity_prime))
+    parameters = ((1, 0, 0), (20, expit, logistic_prime), (20, expit, logistic_prime), (1, identity, identity_prime))
 
     # Run the network
-    N = NeuralNetwork(X, y, layers)
-    N.train(4000, learning_rate=learning_rate)
+    NN = NeuralNetwork(parameters)
+    NN.train(X, y, 4000, learning_rate=learning_rate)
     predictions.append([learning_rate, N.predict(X)])
 
 
@@ -125,17 +129,17 @@ def test_classification(plots=False):
     y = np.sin(X[:, 0]) <= X[:, 1]
 
     # Fitting
-    param = ((2, 0, 0), (30, expit, logistic_prime), (30, expit, logistic_prime), (1, expit, logistic_prime))
-    N = NeuralNetwork(X, y, param)
+    parameters = ((2, 0, 0), (30, expit, logistic_prime), (30, expit, logistic_prime), (1, expit, logistic_prime))
+    NN = NeuralNetwork(parameters)
 
-    # Training and Validation
-    N.train(n_iter, learning_rate)
-    predictions_training = N.predict(X)
+    # Training
+    NN.train(X, y, n_iter, learning_rate)
+    predictions_training = NN.predict(X)
     predictions_training = predictions_training < 0.5
     predictions_training = predictions_training[:, 0]
 
     # Testing
-    predictions_testing = N.predict(T)
+    predictions_testing = NN.predict(T)
     predictions_testing = predictions_testing < 0.5
     predictions_testing = predictions_testing[:, 0]
 
@@ -143,7 +147,6 @@ def test_classification(plots=False):
     fig, ax = plt.subplots(2, 1)
 
     # Training plot
-
     # We plot the predictions of the neural net blue for class 0, red for 1.
     ax[0].scatter(X[predictions_training, 0], X[predictions_training, 1], color='blue')
     not_index = np.logical_not(predictions_training)
@@ -172,8 +175,36 @@ def test_classification(plots=False):
         plt.show()
 
 
-if __name__ == "__main__":
+def test_handwritten_digits(plots=False):
+    
+    predictions = []
 
+    learning_rate = 0.5
+    n_iter = 30000
+
+    digits = load_digits()
+    X = digits.data
+    y = digits.target
+    X -= X.min() # normalize the values to bring them into the range 0-1
+    X /= X.max()
+
+    parameters = ((2, 0, 0), (30, expit, logistic_prime), (30, expit, logistic_prime), (1, expit, logistic_prime))
+    X_train, X_test, y_train, y_test = train_test_split(X, y)
+    NN = NeuralNetwork(parameters)
+
+    labels_train = LabelBinarizer().fit_transform(y_train)
+    labels_test = LabelBinarizer().fit_transform(y_test)
+
+    NN.train(X_train, labels_train, n_iter, learning_rate)
+    for i in range(X_test.shape[0]):
+        o = NN.predict_x(X_test[i])
+        predictions.append(np.argmax(o))
+
+    print confusion_matrix(y_test, predictions)
+    print classification_report(y_test, predictions)
+
+
+if __name__ == "__main__":
 
     graph_list = []
 

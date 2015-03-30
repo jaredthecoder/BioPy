@@ -14,7 +14,6 @@ import argparse
 
 # 3rd-Party Libraries
 import sklearn as sk
-import matplotlib as plt
 import numpy as np
 from scipy.special import expit
 
@@ -26,17 +25,11 @@ from utils import *
 class NeuralNetwork(object):
 
     # Class constructor
-    def __init__(self, X, y, parameters):
+    def __init__(self, parameters):
         """ Expect parameters to be a tuple of the form:
             ((n_input,0,0), (n_hidden_layer_1, activation_function_1, deriv_activation_function_1'), ...,
             (n_hidden_layer_k, activation_function_k, deriv_activation_function_k'), (n_output, activation_function_o, deriv_activation_function_o'))
         """
-
-        # Input
-        self.X = X
-
-        # Output
-        self.y = y
 
         # Number of layers total including the input and output layers
         self.n_layers = len(parameters)
@@ -108,7 +101,10 @@ class NeuralNetwork(object):
 
 
     # Train the network, using a specific number of iterations 
-    def train(self, n_iter, learning_rate=1):
+    def train(self, X, y, n_iter, learning_rate=1):
+
+        self.X = X
+        self.y = y
 
         self.learning_rate = learning_rate
         n = self.X.shape[0]
