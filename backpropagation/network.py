@@ -47,9 +47,9 @@ class BackPropagationNetwork(object):
         self.momentum_rate = 0.1
         self.Theta_L = []
 
-        self.initialize_theta(self.n_features, self.n_classes, self.hidden_layers, self.reg_term)
+        self.initialize_theta()
 
-    def initialize_theta(self, input_unit_count, output_class_count, hidden_unit_length_list):
+    def initialize_theta(self):
         """
             initialize_theta creates architecture of neural network
             Defines self.Theta_L
@@ -60,15 +60,10 @@ class BackPropagationNetwork(object):
                 output_class_count - integer, number of output classes
         """
 
-        if not hidden_unit_length_list:
-            hidden_unit_length_list = self.hidden_layers
-        else:
-            self.hidden_layers = hidden_unit_length_list
-
-        unit_count_list = [input_unit_count]
-        unit_count_list.extend(hidden_unit_length_list)
-        unit_count_list.append(output_class_count)
-        self.Theta_L = [ 2 * (np.random.rand( unit_count, unit_count_list[l-1]+1 ) - 0.5) for l, unit_count in enumerate(unit_count_list) if l > 0]
+        unit_count_list = [len(self.n_features[0])]
+        unit_count_list += self.hidden_layers
+        unit_count_list.append(len(self.n_classes[0]))
+        self.Theta_L = [ 2 * (np.random.rand(unit_count, unit_count_list[l-1]+1) - 0.5) for l, unit_count in enumerate(unit_count_list) if l > 0]
 
     def print_theta(self):
         """self.logger.info(_theta(self) self.logger.info(s self.Theta_L and architecture info to std out"""
@@ -91,17 +86,15 @@ class BackPropagationNetwork(object):
                 self.logger.info(' - Hidden %s: %s Units' % ((t+1), theta.shape[0]))
             else:
                 self.logger.info(' - Output: %s Units' % theta.shape[0])
-        self.logger.info('\n')
 
         self.logger.info('Theta Shapes')
         for l, theta in enumerate(self.Theta_L):
             self.logger.info('Theta %s: %s' % (l, theta.shape))
-        self.logger.info('\n')
 
         self.logger.info('Theta Values')
         for l, theta in enumerate(self.Theta_L):
             self.logger.info('Theta %s:' % l)
-            self.logger.info(theta)
+            self.logger.info("\n" + str(theta))
         self.logger.info('\n')
 
     def cost_function(self, Y, Y_pred):
@@ -233,12 +226,6 @@ class BackPropagationNetwork(object):
             Training and Test data are assumed to be in random order; mini-batch processing does not need to re-randomize
         """
 
-        # If no Theta provided, use a 3 layer architecture with hidden_layer units = 2 or y classes or x features
-        if not self.Theta_L:
-            hidden_units = max(2, len(Y_train[0]), len(X_train[0]))
-            self.initialize_theta(len(X_train[0]), len(Y_train[0]), [hidden_units])
-
-
         # Initial Learning Rate
         learning_rates = []
         learning_rates.append( self.learning_rate )
@@ -298,10 +285,10 @@ class BackPropagationNetwork(object):
 
         for t, theta in enumerate(self.Theta_L):
             self.logger.info('Theta: %s' % t)
-            self.logger.info(np.round(theta, 2))
+            self.logger.info("\n" + str(np.round(theta, 2)))
 
-        self.logger.info('i:',i,'    - cost:',cost_list[i])
-        self.logger.info('i:',i,'    - cost test:',cost_test_list[i])
+        self.logger.info('i: %ld - cost:      %ld', i, cost_list[i])
+        self.logger.info('i: %ld - cost test: %ld', i, cost_test_list[i])
 
         return cost_list, learning_rates, cost_test_list
 
@@ -314,7 +301,7 @@ class BackPropagationNetwork(object):
         self.learning_penalty = learning_penalty
 
         # Initialize Theta based on selected architecture
-        self.initialize_theta(data_train.shape[1], target_train.shape[1], hidden_unit_length_list)
+        # self.initialize_theta(data_train.shape[1], target_train.shape[1], hidden_unit_length_list)
 
         # Fit
         cost_list, learning_rates, cost_test_list = self.fit(data_train, target_train, X_test=data_test, Y_test=target_test)
@@ -322,11 +309,10 @@ class BackPropagationNetwork(object):
         # Predict
         a_N, Y_pred = self.predict(data_test)
         self.logger.info('Given X:')
-        self.logger.info(data_test[:5])
+        self.logger.info("\n" + str(data_test[:5]))
         self.logger.info('Actual Y, Predicted Y:')
         for p in zip(target_test[:10], np.round(Y_pred[:10],3)):
             self.logger.info(p)
-        self.logger.info('\n')
         self.logger.info('CE on Test Set')
         self.logger.info(self.cost_function(target_test , Y_pred))
 

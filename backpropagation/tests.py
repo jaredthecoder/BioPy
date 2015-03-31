@@ -11,7 +11,9 @@ class Tests(object):
         self.logger = logger
         self.args = args
 
-    def run_tests():
+    def run_tests(self):
+        self.args.hidden_layers = [int(x[0]) for x in self.args.hidden_layers]
+
         if self.args.test_type == 'x':
             self.logger.info("====RUNNING XOR TEST====")
             target_test, Y_pred, cost_list, cost_test_list, learning_rates = self.XOR_test(self.args.reg_term, self.args.hidden_layers, self.args.epochs, self.args.learning_rate, self.args.momentum_rate, self.args.learning_reward, self.args.learning_penalty)
@@ -62,15 +64,12 @@ class Tests(object):
         train_target = target_array[shuffled_index[:train_len]]
         test_target = target_array[shuffled_index[train_len:]]
 
-        self.logger.info('\n')
         self.logger.info('Data Set: %d Observations, %d Features' % (data_array.shape[0], data_array.shape[1]))
         self.logger.info('Training Set: %d Observations, %d Features' % (train_data.shape[0], train_data.shape[1]))
         self.logger.info('Test Set: %d Observations, %d Features' % (test_data.shape[0], test_data.shape[1]))
-        self.logger.info('\n')
         self.logger.info('Target Set: %d Observations, %d Classes' % (target_array.shape[0], target_array.shape[1]))
         self.logger.info('Training Set: %d Observations, %d Features' % (train_target.shape[0], train_target.shape[1]))
         self.logger.info('Test Set: %d Observations, %d Features' % (test_target.shape[0], test_target.shape[1]))
-        self.logger.info('\n')
 
         return train_data, test_data, train_target, test_target
 
@@ -84,7 +83,7 @@ class Tests(object):
         # Split into train, test sets
         data_train, data_test, target_train, target_test = self.train_test_split(data, target, .75)
 
-        NN = BackPropagationNetwork(self.logger, len(data_train), len(target_train), hidden_layers, reg_term)
+        NN = BackPropagationNetwork(self.logger, data_train, target_train, hidden_layers, reg_term)
         return BackPropagationNetwork.test(NN, data_train, target_train, epochs, learning_rate, momentum_rate, learning_acceleration, learning_backup, data_test, target_test)
 
     def digits_test(self, reg_term, hidden_layers, epochs, learning_rate, momentum_rate, learning_acceleration, learning_backup):
@@ -97,7 +96,7 @@ class Tests(object):
         # Split into train, test sets
         data_train, data_test, target_train, target_test = self.train_test_split(data, target, .75)
 
-        NN = BackPropagationNetwork(self.logger, len(data_train), len(target_train), hidden_layers, reg_term)
+        NN = BackPropagationNetwork(self.logger, data_train, target_train, hidden_layers, reg_term)
         return BackPropagationNetwork.test(NN, data_train, target_train, epochs, learning_rate, momentum_rate, learning_acceleration, learning_backup, data_test, target_test)
 
     def XOR_test(self, reg_term, hidden_layers, epochs, learning_rate, momentum_rate, learning_acceleration, learning_backup):
@@ -122,9 +121,9 @@ class Tests(object):
         target_test = np.array([[1],[1],[0],[0]])
 
         self.logger.info('Training Data: X & Y')
-        self.logger.info(data_train)
-        self.logger.info(target_train)
+        self.logger.info("\n" + str(data_train))
+        self.logger.info("\n" + str(target_train))
 
-        NN = BackPropagationNetwork(self.logger, len(data_train), len(target_train), hidden_layers, reg_term)
+        NN = BackPropagationNetwork(self.logger, data_train, target_train, hidden_layers, reg_term)
         return BackPropagationNetwork.test(NN, data_train, target_train, epochs, learning_rate, momentum_rate, learning_acceleration, learning_backup, data_test, target_test)
         

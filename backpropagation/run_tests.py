@@ -29,7 +29,7 @@ def cd(newPath):
 def is_valid_ttype_option(ttype):
     options = ['x', 'd', 'i']
     if ttype in options:
-        return type(ttype)
+        return ttype
     else:
         print "Option 'ttype' is invalid. Choose from: "
         print options
@@ -49,7 +49,7 @@ def setup_argparser():
     requiredArguments.add_argument('-hidden_layers', dest='hidden_layers', required=True, type=list, nargs='+', help="A list of numbers which represent each hidden layer and the affiliate nodes in that layer.")
     
     optionalArguments = parser.add_argument_group('optional Arguments')
-    optionalArguments.add_argument('--epochs', dest='epochs', required=False, type=int, default=3000, help="Number of epochs to train on. Default is 3000.")
+    optionalArguments.add_argument('--epochs', dest='epochs', required=False, type=int, default=2500, help="Number of epochs to train on. Default is 2500.")
     optionalArguments.add_argument('--learning_rate', dest='learning_rate', required=False, type=float, default=0.5, help="Learning rate, specifies the step width of the gradient descent. Default is 0.5.")
     optionalArguments.add_argument('--momentum_rate', dest='momentum_rate', required=False, type=float, default=0.1, help="Momentum rate, specifies the amount of the old weight change (relative to 1) which is added to the current change. Default is 0.1.")
     optionalArguments.add_argument('--learning_reward', dest='learning_reward', required=False, type=float, default=1.05, help="Magnitude to scale the learning rate by if cost/error decreases from the previous epoch. Default is 1.05.")
@@ -59,13 +59,13 @@ def setup_argparser():
     return parser
 
 
-def setup_logger(logPath):
+def setup_logger(log_path, logger_name, logfile_name):
 
     logFormatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    rootLogger = logging.getLogger(__main__)
+    rootLogger = logging.getLogger(logger_name)
     rootLogger.setLevel(logging.DEBUG)
 
-    fileHandler = logging.FileHandler("{0}/{1}.log".format(logPath, fileName))
+    fileHandler = logging.FileHandler("{0}/{1}.log".format(log_path, logfile_name))
     fileHandler.setFormatter(logFormatter)
     rootLogger.addHandler(fileHandler)
 
@@ -95,9 +95,9 @@ if __name__=="__main__":
             if not os.path.exists('Experiment-' + str(experiment_number)):
                 os.makedirs('Experiment-' + str(experiment_number))
 
-    logger = setup_logger('results/data/Experiment-' + str(experiment_number))
-    logger.info("==========Experiment Number %d==========", experiment_number)
-    logger.info("Program Parameters: " + str(list(args)))
+    logger = setup_logger('results/data/Experiment-' + str(experiment_number), "__main__", "main")
+    logger.info("==========Experiment Number %s==========", experiment_number)
+    logger.info("Program Parameters: " + str(args))  
 
     test_suite = Tests(logger, args)
     test_suite.run_tests()
