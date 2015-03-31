@@ -1,237 +1,120 @@
-'''
-    tests.py
-    PyNet, Backpropagation Neural Network class
-
-    Written by: Jared Smith and David Cunningham
-'''
-
-
-# Python standard libraries
-import sys
-import os
-import contextlib
-import tempfile
-import argparse
-from argparse import RawTextHelpFormatter
-
-# 3rd-Party libraries
 import numpy as np
-import sklearn as sk
-from sklearn.cross_validation import train_test_split
-from sklearn.datasets import load_digits
-from sklearn.metrics import confusion_matrix, classification_report
-from sklearn.preprocessing import LabelBinarizer
-from scipy.special import expit
+from matplotlib.pyplot import plot
+from sklearn.datasets import load_iris, load_digits
 
-# Project specific libraries
-from network import *
-from utils import *
+from network import BackPropagationNetwork
 
+class Tests(object):
 
-# Function for changing directories safely
-@contextlib.contextmanager
-def cd(newPath):
-    savedPath = os.getcwd()
-    os.chdir(newPath)
-    yield
-    os.chdir(savedPath)
+    def __init__(self):
+        pass
 
+    def translate_to_binary_array(self, target):
+        n_obs = len(target)
+        unique_targets = np.unique(target)
+        n_unique_targets = len(np.unique(target))
 
-# Setup the command line parser
-def setup_argparser():
+        # Translation of target values to array indicies
+        target_translation = dict(zip(unique_targets, range(n_unique_targets)))
 
-    parser = argparse.ArgumentParser(description='' +
-                                    'Written by: Jared Smith and David Cunningham.',
-                                     version='1.0.0', formatter_class=RawTextHelpFormatter)
-    requiredArguments = parser.add_argument_group('required Arguments')
-    requiredArguments.add_argument('-exp', dest='experiment_number', required=True, type=str, help='Number of this experiment.')
-    requiredArguments.add_argument('-ttype', dest='test_type', required=True, type=str, help="Type of test to run. Choose 'r' " +
-                                    "for regression or 'c' for classification.")
+        # Create initial target array with all zeros
+        target_array = np.zeros((n_obs, n_unique_targets))
 
-    return parser
+        # Set 1 value
+        for i, val in enumerate(target):
+            target_array[i][target_translation[val]] = 1
 
-# Get Peak of Data Curve
-def getpeak(data):
-    peak_y = np.max(data)
-    peak_x = np.argmax(data)
-    return peak_x, peak_y
+        return target_array
 
 
-# Normalize Data
-def normalize_data (data, scale, p):
-    norm_data = data.copy()
-    b = np.min(norm_data)
-    norm_data -= b
-    norm_data /= p
-    norm_data *= scale
+    def train_test_split(self, data_array, target_array, split=.8):
+        """
+        Split into randomly shuffled train and test sets
+        Split on Number of records or Percent of records in the training set
+        if split is <= 1 then split is a percent, else split is the number of records
+        """
 
-    return norm_data
+        n_obs = len(data_array)
 
+        if split <= 1:
+            train_len = int(split * n_obs)
+        else:
+            train_len = int(np.round(split))
 
-# Try to approximate a sine curve with a linear regression
-def test_regression(plots=False):
+        shuffled_index = range(n_obs)
+        np.random.shuffle(shuffled_index)
 
-    predictions = []
+        train_data = data_array[shuffled_index[:train_len]]
+        test_data = data_array[shuffled_index[train_len:]]
 
-    n = 200
-    learning_rate = 0.05
+        train_target = target_array[shuffled_index[:train_len]]
+        test_target = target_array[shuffled_index[train_len:]]
 
-    X = np.linspace(0, 3 * np.pi, num=n)
-    X.shape = (n, 1)
-    y = np.sin(X)
+        print
+        print 'Data Set: %d Observations, %d Features' % (data_array.shape[0], data_array.shape[1])
+        print 'Training Set: %d Observations, %d Features' % (train_data.shape[0], train_data.shape[1])
+        print 'Test Set: %d Observations, %d Features' % (test_data.shape[0], test_data.shape[1])
+        print
+        print 'Target Set: %d Observations, %d Classes' % (target_array.shape[0], target_array.shape[1])
+        print 'Training Set: %d Observations, %d Features' % (train_target.shape[0], train_target.shape[1])
+        print 'Test Set: %d Observations, %d Features' % (test_target.shape[0], test_target.shape[1])
+        print
 
-    # Make the network structure parameters, see network.py parameters variable for how to structure
-    parameters = ((1, 0, 0), (20, expit, logistic_prime), (20, expit, logistic_prime), (1, identity, identity_prime))
+        return train_data, test_data, train_target, test_target
 
-    # Run the network
-    NN = NeuralNetwork(parameters)
-    NN.train(X, y, 4000, learning_rate=learning_rate)
-    predictions.append([learning_rate, NN.predict(X)])
+    def iris_test(self, hidden_unit_length_list = [], epochs=2500, learning_rate=0.5, momentum_rate=0.1, learning_acceleration=1.05, learning_backup=0.5):
+        NN = BackPropagationNetwork()
 
+        data_set = load_iris()
 
-    # Plotting 
-    import matplotlib.pyplot as plt
-    fig, ax = plt.subplots(1, 1)
+        data = data_set.data
+        target = self.translate_to_binary_array(data_set.target)
 
-    if plots:
-        ax.plot(X, y, label='Sine', linewidth=2, color='black')
-        for data in predictions:
-            ax.plot(X, data[1], label="Learning Rate: " + str(data[0]))
-        ax.legend()
-        plt.show()
+        # Split into train, test sets
+        data_train, data_test, target_train, target_test = self.train_test_split(data, target, .75)
 
+        return BackPropagationNetwork.nn_test(NN, data_train, target_train, hidden_unit_length_list, epochs, learning_rate, momentum_rate, learning_acceleration, learning_backup, data_test, target_test)
 
-# Try to approximate a sine curve with a non-linear classification
-def test_classification(plots=False):
-    
-    # Number of samples
-    n = 700
+    def digits_test(self, hidden_unit_length_list = [], epochs=2500, learning_rate=0.5, momentum_rate=0.1, learning_acceleration=1.05, learning_backup=0.5):
+        NN = BackPropagationNetwork()
 
-    n_iter = 1500
-    learning_rate = 0.05
+        data_set = load_digits()
 
-    # Samples for true decision boundary plot
-    L = np.linspace(0,3 * np.pi, num=n)
-    l = np.sin(L)
+        data = data_set.data
+        target = self.translate_to_binary_array(data_set.target)
 
-    # Data inputs, training
-    X = np.random.uniform(0, 3 * np.pi, size=(n, 2))
-    X[:, 1] *= 1 / np.pi
-    X[:, 1] -= 1
+        # Split into train, test sets
+        data_train, data_test, target_train, target_test = self.train_test_split(data, target, .75)
 
-
-    # Data inputs, testing
-    T = np.random.uniform(0, 3 * np.pi, size=(n, 2))
-    T[:, 1] *= 1 / np.pi
-    T[:, 1] -= 1
-
-    # Data outputs
-    y = np.sin(X[:, 0]) <= X[:, 1]
-
-    # Fitting
-    parameters = ((2, 0, 0), (30, expit, logistic_prime), (30, expit, logistic_prime), (1, expit, logistic_prime))
-    NN = NeuralNetwork(parameters)
-
-    # Training
-    NN.train(X, y, n_iter, learning_rate)
-    predictions_training = NN.predict(X)
-    predictions_training = predictions_training < 0.5
-    predictions_training = predictions_training[:, 0]
-
-    # Testing
-    predictions_testing = NN.predict(T)
-    predictions_testing = predictions_testing < 0.5
-    predictions_testing = predictions_testing[:, 0]
-
-    import matplotlib.pyplot as plt
-    fig, ax = plt.subplots(2, 1)
-
-    # Training plot
-    # We plot the predictions of the neural net blue for class 0, red for 1.
-    ax[0].scatter(X[predictions_training, 0], X[predictions_training, 1], color='blue')
-    not_index = np.logical_not(predictions_training)
-    ax[0].scatter(X[not_index, 0], X[not_index, 1], color='red')
-    ax[0].set_xlim(0, 3 * np.pi)
-    ax[0].set_ylim(-1, 1)
-
-    # True decision boundary
-    ax[0].plot(L, l, color='black')
-    
-    # Shade the areas according to how to they should be classified.
-    ax[0].fill_between(L, l, y2=-1, alpha=0.5)
-    ax[0].fill_between(L, l, y2=1, alpha=0.5, color='red')
-
-    # Testing plot
-    ax[1].scatter(T[predictions_testing, 0], T[predictions_testing, 1], color='blue')
-    not_index = np.logical_not(predictions_testing)
-    ax[1].scatter(T[not_index, 0], T[not_index, 1], color='red')
-    ax[1].set_xlim(0, 3 * np.pi)
-    ax[1].set_ylim(-1, 1)
-    ax[1].plot(L, l, color='black')
-    ax[1].fill_between(L, l, y2=-1, alpha=0.5)
-    ax[1].fill_between(L, l, y2=1, alpha=0.5, color='red')
-
-    if plots:
-        plt.show()
+        return BackPropagationNetwork.nn_test(NN, data_train, target_train, hidden_unit_length_list, epochs, learning_rate, momentum_rate, learning_acceleration, learning_backup, data_test, target_test)
 
 
-def test_handwritten_digits(plots=False):
-    
-    predictions = []
+    def XOR_test(self, hidden_unit_length_list = [], epochs=2500, learning_rate=0.5, momentum_rate=0.1, learning_acceleration=1.05, learning_backup=0.5):
+        """
+        XOR_test is a simple test of the nn printing the predicted value to std out
+        Trains on a sample XOR data set
+        Predicts a single value
+        Accepts an option parameter to set architecture of hidden layers
+        """
 
-    learning_rate = 0.5
-    n_iter = 30000
+        NN = BackPropagationNetwork()
 
-    digits = load_digits()
-    X = digits.data
-    y = digits.target
-    X -= X.min() # normalize the values to bring them into the range 0-1
-    X /= X.max()
+        # Set Data for XOR Test
+        data_train = np.zeros((4,2))
+        data_train[0,0] = 1.
+        data_train[1,1] = 1.
+        data_train[2,:] = 1.
+        data_train[3,:] = 0.
 
-    parameters = ((2, 0, 0), (30, expit, logistic_prime), (30, expit, logistic_prime), (1, expit, logistic_prime))
-    X_train, X_test, y_train, y_test = train_test_split(X, y)
-    NN = NeuralNetwork(parameters)
+        target_train = np.array([1.,1.,0.,0.]).reshape(4,1)         # Single Class
 
-    labels_train = LabelBinarizer().fit_transform(y_train)
-    labels_test = LabelBinarizer().fit_transform(y_test)
+        # Test X and Y
+        data_test = np.array([[1,0],[0,1],[1,1],[0,0]])
+        target_test = np.array([[1],[1],[0],[0]])
 
-    NN.train(X_train, labels_train, n_iter, learning_rate)
-    for i in range(X_test.shape[0]):
-        o = NN.predict_x(X_test[i])
-        predictions.append(np.argmax(o))
+        print 'Training Data: X & Y'
+        print data_train
+        print target_train
 
-    print confusion_matrix(y_test, predictions)
-    print classification_report(y_test, predictions)
-
-
-if __name__ == "__main__":
-
-    graph_list = []
-
-    parser = setup_argparser()
-    args = parser.parse_args()
-    experiment_number = args.experiment_number
-
-    # Setup directories for storing results
-    if not os.path.exists('results'):
-        os.makedirs('results')
-
-    with cd('results'):
-        if not os.path.exists('data'):
-            os.makedirs('data')
-        with cd('data'):
-            if not os.path.exists('Experiment-' + str(experiment_number)):
-                os.makedirs('Experiment-' + str(experiment_number))
-
-    test_type = args.test_type
-
-    if test_type == 'r':
-        test_regression(True)
-    elif test_type == 'c':
-        test_classification(True)
-    elif test_type == 'd':
-        test_handwritten_digits(True)
-    else:
-        print "Bad Command. Try 'r' or 'c'"
-
-
+        return BackPropagationNetwork.nn_test(NN, data_train, target_train, hidden_unit_length_list, epochs, learning_rate, momentum_rate, learning_acceleration, learning_backup, data_test, target_test)
+        
