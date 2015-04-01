@@ -14,7 +14,6 @@ class BackPropagationNetwork(object):
     nn = BackPropagationNetwork(n_features, n_classes, hidden_layers, reg_term)
 
     --> reg_term (i.e. lambda) is the regularization term
-    
     nn input and output units determined by training data
 
     Set nn.hidden_layers to list of integers to create hidden layer architecture
@@ -40,7 +39,7 @@ class BackPropagationNetwork(object):
         self.n_classes = n_classes
         self.hidden_layers = hidden_layers
         self.reg_term = reg_term
-        self.epochs = 2         
+        self.epochs = 2
         self.learning_rate = 0.5
         self.learning_reward = 1.05
         self.learning_penalty = 0.5
