@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 import math as math
 from matplotlib.pyplot import plot
@@ -18,12 +20,20 @@ class Tests(object):
         if self.args.test_type == 'x':
             self.logger.info("====RUNNING XOR TEST====")
             target_test, Y_pred, cost_list, cost_test_list, learning_rates = self.XOR_test(self.args.reg_term, self.args.hidden_layers, self.args.epochs, self.args.learning_rate, self.args.momentum_rate, self.args.learning_reward, self.args.learning_penalty)
+            return (target_test, Y_pred, cost_list, cost_test_list, learning_rates)
         elif self.args.test_type == 'd':
             self.logger.info("====RUNNING DIGITS TEST====")
             target_test, Y_pred, cost_list, cost_test_list, learning_rates = self.digits_test(self.args.reg_term, self.args.hidden_layers, self.args.epochs, self.args.learning_rate, self.args.momentum_rate, self.args.learning_reward, self.args.learning_penalty)
+            return (target_test, Y_pred, cost_list, cost_test_list, learning_rates)
         elif self.args.test_type == 'i':
             self.logger.info("====RUNNING IRIS TEST====")
             target_test, Y_pred, cost_list, cost_test_list, learning_rates = self.iris_test(self.args.reg_term, self.args.hidden_layers, self.args.epochs, self.args.learning_rate, self.args.momentum_rate, self.args.learning_reward, self.args.learning_penalty)
+            return (target_test, Y_pred, cost_list, cost_test_list, learning_rates)
+        elif self.args.test_type == 'f':
+            self.logger.info("====RUNNING FUNCTION APPROXIMATION====")
+            target_test, Y_pred, cost_list, cost_test_list, learning_rates = self.fnct_aprox(self.args.reg_term, self.args.hidden_layers, self.args.epochs, self.args.learning_rate, self.args.momentum_rate, self.args.learning_reward, self.args.learning_penalty, self.args.ftrain, self.args.ftest, self.args.fvalid)
+            return (target_test, Y_pred, cost_list, cost_test_list, learning_rates)
+
 
     def translate_to_binary_array(self, target):
         n_obs = len(target)
@@ -127,27 +137,26 @@ class Tests(object):
 
         NN = BackPropagationNetwork(self.logger, data_train, target_train, hidden_layers, reg_term)
         return BackPropagationNetwork.test(NN, data_train, target_train, epochs, learning_rate, momentum_rate, learning_acceleration, learning_backup, data_test, target_test)
-    def fnct_aprox(self, reg_term, hidden_layers, epochs, learning_rate, momentum_rate, learning_acceleration, learning_backup, training_name, testing_name):
+
+    def fnct_aprox(self, reg_term, hidden_layers, epochs, learning_rate, momentum_rate, learning_acceleration, learning_backup, training_name, testing_name, validation_name):
         #read in train
-        data_train, target_train = parse_file(training_name, 200, num_inputs)
+        data_train, target_train = parse_file(training_name, 200)
         #read in test
-        data_test, target_test = parse_file(testing_name, 100, num_inputs)
-
+        data_test, target_test = parse_file(testing_name, 100)
+        #read in validation
+        data_val, target_val = parse_file(validation_name, 50)
         NN = BackPropagationNetwork(self.logger, data_train, target_train, hidden_layers, reg_term)
-        target_test, Y_pred, cost_list, cost_test_list, learning_rates = NN.test(data_train, target_train, epochs, learning_rate, momentum_rate, learning_reward, learning_penalty, data_test, target_test);
+        return NN.test(data_train, target_train, epochs, learning_rate, momentum_rate, learning_reward, learning_penalty, data_test, target_test, data_val=data_val, target_val=target_val);
 
-        #calculate problem 1 function
-
-        NN = BackPropagationNetwork(self.logger, data_train, target_train, hidden_layers, reg_term)
     def parse_file(self, filename, num_lines, num_inputs):
         data = np.zeros(num_lines, num_inputs)
         target = np.zeros(num_lines)
         f = open(filename, 'r')
         for index, line in enumerate(f):
             values = line.split(" ")
+            num_inpust = len(values)
             for i in range(0, num_inputs - 1):
                 data[index][i] = int(values[i])
             target[index][num_inputs-1] = values[num_inputs-1]
         f.close()
         return data, target
-    

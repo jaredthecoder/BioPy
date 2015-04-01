@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 # Project specific libraries
 from network import BackPropagationNetwork
 from tests import Tests
+from analysis import *
 
 
 # Function for changing directories safely
@@ -27,7 +28,7 @@ def cd(newPath):
 
 
 def is_valid_ttype_option(ttype):
-    options = ['x', 'd', 'i']
+    options = ['x', 'd', 'i', 'f']
     if ttype in options:
         return ttype
     else:
@@ -47,7 +48,6 @@ def setup_argparser():
     requiredArguments.add_argument('-exp', dest='experiment_number', required=True, type=str, help="Number of this experiment.")
     requiredArguments.add_argument('-ttype', dest='test_type', required=True, type=is_valid_ttype_option, help="Type of test to run. Choose from 'x', 'd', or 'i'")
     requiredArguments.add_argument('-hidden_layers', dest='hidden_layers', required=True, type=list, nargs='+', help="A list of numbers which represent each hidden layer and the affiliate nodes in that layer.")
-    
     optionalArguments = parser.add_argument_group('optional Arguments')
     optionalArguments.add_argument('--epochs', dest='epochs', required=False, type=int, default=2500, help="Number of epochs to train on. Default is 2500.")
     optionalArguments.add_argument('--learning_rate', dest='learning_rate', required=False, type=float, default=0.5, help="Learning rate, specifies the step width of the gradient descent. Default is 0.5.")
@@ -55,7 +55,11 @@ def setup_argparser():
     optionalArguments.add_argument('--learning_reward', dest='learning_reward', required=False, type=float, default=1.05, help="Magnitude to scale the learning rate by if cost/error decreases from the previous epoch. Default is 1.05.")
     optionalArguments.add_argument('--learning_penalty', dest='learning_penalty', required=False, type=float, default=0.5, help="Magnitude to scale the learning rate by if the cost/error increases from the previous epoch. Default is 0.5.")
     optionalArguments.add_argument('--regularization_term', dest='reg_term', required=False, type=float, default=1e-5, help="Regularization term (i.e. lamdba in the equations). Default is 1e-5.")
-    
+    optionalArguments.add_argument('--ftrain', dest='ftrain', required=False, type=str, default='training1.txt', help="Training data file for test.")
+    optionalArguments.add_argument('--ftest', dest='ftest', required=False, type=str, default='testing1.txt', help="Testing data file for test.")
+    optionalArguments.add_argument('--fvalid', dest='fvalid', required=False, type=str, default='validation1.txt', help="Validation data file for test.")
+    optionalArguments.add_argument('--plot', dest='plot', required=False, type=bool, default=True, help="Specify if data is to be plotted. Default is True.")
+
     return parser
 
 
@@ -97,7 +101,12 @@ if __name__=="__main__":
 
     logger = setup_logger('results/data/Experiment-' + str(experiment_number), "__main__", "main")
     logger.info("==========Experiment Number %s==========", experiment_number)
-    logger.info("Program Parameters: " + str(args))  
+    logger.info("Program Parameters: " + str(args))
 
     test_suite = Tests(logger, args)
-    test_suite.run_tests()
+    target_test, Y_pred, cost_list, cost_test_list, learning_rates = test_suite.run_tests()
+
+    # Plotting 
+    if args.plot:
+        plot_file_name = 'results/data/Experiment-%s/epoch-vs-error-exp-%s.pdf' % (experiment_number, experiment_number)
+        plot_error_versus_epochs(plot_file_name, target_test, Y_pred, cost_list, cost_test_list, learning_rates)

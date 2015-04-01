@@ -14,7 +14,6 @@ class BackPropagationNetwork(object):
     nn = BackPropagationNetwork(n_features, n_classes, hidden_layers, reg_term)
 
     --> reg_term (i.e. lambda) is the regularization term
-    
     nn input and output units determined by training data
 
     Set nn.hidden_layers to list of integers to create hidden layer architecture
@@ -40,7 +39,7 @@ class BackPropagationNetwork(object):
         self.n_classes = n_classes
         self.hidden_layers = hidden_layers
         self.reg_term = reg_term
-        self.epochs = 2  
+        self.epochs = 2
         self.learning_rate = 0.5
         self.learning_reward = 1.05
         self.learning_penalty = 0.5
@@ -306,7 +305,8 @@ class BackPropagationNetwork(object):
         # Fit
         cost_list, learning_rates, cost_test_list = self.fit(data_train, target_train, X_test=data_test, Y_test=target_test)
 
-        # Predict
+        # Predict for test log
+        self.logger.info('Test results:')
         a_N, Y_pred = self.predict(data_test)
         self.logger.info('Given X:')
         self.logger.info("\n" + str(data_test[:5]))
@@ -316,4 +316,15 @@ class BackPropagationNetwork(object):
         self.logger.info('CE on Test Set')
         self.logger.info(self.cost_function(target_test , Y_pred))
 
+        #Predict for validation results
+        if data_val is not None:
+            self.logger.info('Validation results:')
+            va_N, vY_pred = self.predict(data_val)
+            self.logger.info('Given X:')
+            self.logger.info("\n" + str(data_val[:5]))
+            self.logger.info('Actual Y, Predicted Y:')
+            for p in zip(target_val[:10], np.round(vY_pred[:10],3)):
+                self.logger.info(p)
+            self.logger.info('CE on Validation Set')
+            self.logger.info(self.cost_function(target_test , vY_pred))
         return target_test, Y_pred, cost_list, cost_test_list, learning_rates
