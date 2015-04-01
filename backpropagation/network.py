@@ -291,7 +291,7 @@ class BackPropagationNetwork(object):
 
         return cost_list, learning_rates, cost_test_list
 
-    def test(self, data_train, target_train, epochs, learning_rate, momentum_rate, learning_reward, learning_penalty, data_test=None, target_test=None):
+    def test(self, data_train, target_train, epochs, learning_rate, momentum_rate, learning_reward, learning_penalty, data_test=None, target_test=None, data_val=None, target_val = None):
 
         self.epochs = epochs
         self.learning_rate = learning_rate
