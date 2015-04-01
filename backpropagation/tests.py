@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 from matplotlib.pyplot import plot
 from sklearn.datasets import load_iris, load_digits
@@ -17,12 +19,20 @@ class Tests(object):
         if self.args.test_type == 'x':
             self.logger.info("====RUNNING XOR TEST====")
             target_test, Y_pred, cost_list, cost_test_list, learning_rates = self.XOR_test(self.args.reg_term, self.args.hidden_layers, self.args.epochs, self.args.learning_rate, self.args.momentum_rate, self.args.learning_reward, self.args.learning_penalty)
+            return (target_test, Y_pred, cost_list, cost_test_list, learning_rates)
         elif self.args.test_type == 'd':
             self.logger.info("====RUNNING DIGITS TEST====")
             target_test, Y_pred, cost_list, cost_test_list, learning_rates = self.digits_test(self.args.reg_term, self.args.hidden_layers, self.args.epochs, self.args.learning_rate, self.args.momentum_rate, self.args.learning_reward, self.args.learning_penalty)
+            return (target_test, Y_pred, cost_list, cost_test_list, learning_rates)
         elif self.args.test_type == 'i':
             self.logger.info("====RUNNING IRIS TEST====")
             target_test, Y_pred, cost_list, cost_test_list, learning_rates = self.iris_test(self.args.reg_term, self.args.hidden_layers, self.args.epochs, self.args.learning_rate, self.args.momentum_rate, self.args.learning_reward, self.args.learning_penalty)
+            return (target_test, Y_pred, cost_list, cost_test_list, learning_rates)
+        elif self.args.test_type == 'f':
+            self.logger.info("====RUNNING FUNCTION APPROXIMATION====")
+            target_test, Y_pred, cost_list, cost_test_list, learning_rates = self.fnct_aprox(self.args.reg_term, self.args.hidden_layers, self.args.epochs, self.args.learning_rate, self.args.momentum_rate, self.args.learning_reward, self.args.learning_penalty, self.args.ftrain, self.args.ftest, self.args.fvalid)
+            return (target_test, Y_pred, cost_list, cost_test_list, learning_rates)
+
 
     def translate_to_binary_array(self, target):
         n_obs = len(target)
@@ -127,3 +137,6 @@ class Tests(object):
         NN = BackPropagationNetwork(self.logger, data_train, target_train, hidden_layers, reg_term)
         return BackPropagationNetwork.test(NN, data_train, target_train, epochs, learning_rate, momentum_rate, learning_acceleration, learning_backup, data_test, target_test)
         
+    def fnct_aprox(self, reg_term, hidden_layers, epochs, learning_rate, momentum_rate, learning_reward, learning_backup, training_name, testing_name, validation_name):
+        print "NOT IMPLEMENTED. Exitting..."
+        sys.exit(0)
