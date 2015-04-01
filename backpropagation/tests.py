@@ -127,13 +127,27 @@ class Tests(object):
 
         NN = BackPropagationNetwork(self.logger, data_train, target_train, hidden_layers, reg_term)
         return BackPropagationNetwork.test(NN, data_train, target_train, epochs, learning_rate, momentum_rate, learning_acceleration, learning_backup, data_test, target_test)
-    def Problem_1:
+    def fnct_aprox(self, reg_term, hidden_layers, epochs, learning_rate, momentum_rate, learning_acceleration, learning_backup, training_name, testing_name):
+        #read in train
+        data_train, target_train = parse_file(training_name, 200, num_inputs)
+        #read in test
+        data_test, target_test = parse_file(testing_name, 100, num_inputs)
+
+        NN = BackPropagationNetwork(self.logger, data_train, target_train, hidden_layers, reg_term)
+        target_test, Y_pred, cost_list, cost_test_list, learning_rates = NN.test(data_train, target_train, epochs, learning_rate, momentum_rate, learning_reward, learning_penalty, data_test, target_test);
 
         #calculate problem 1 function
-        f = (1+(math.sin(math.pi*x/2)*math.cos(math.pi*x/2))/2
 
-
-    def Problem_2;
-
-        #calculate problem 2 function
-        f = 3/13 * (x*x/2 + y*y/3 + z*z/4)
+        NN = BackPropagationNetwork(self.logger, data_train, target_train, hidden_layers, reg_term)
+    def parse_file(self, filename, num_lines, num_inputs):
+        data = np.zeros(num_lines, num_inputs)
+        target = np.zeros(num_lines)
+        f = open(filename, 'r')
+        for index, line in enumerate(f):
+            values = line.split(" ")
+            for i in range(0, num_inputs - 1):
+                data[index][i] = int(values[i])
+            target[index][num_inputs-1] = values[num_inputs-1]
+        f.close()
+        return data, target
+    

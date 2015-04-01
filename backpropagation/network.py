@@ -40,7 +40,7 @@ class BackPropagationNetwork(object):
         self.n_classes = n_classes
         self.hidden_layers = hidden_layers
         self.reg_term = reg_term
-        self.epochs = 2         
+        self.epochs = 2  
         self.learning_rate = 0.5
         self.learning_reward = 1.05
         self.learning_penalty = 0.5
