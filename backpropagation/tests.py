@@ -1,6 +1,7 @@
 import sys
 
 import numpy as np
+import math as math
 from matplotlib.pyplot import plot
 from sklearn.datasets import load_iris, load_digits
 
@@ -136,7 +137,10 @@ class Tests(object):
 
         NN = BackPropagationNetwork(self.logger, data_train, target_train, hidden_layers, reg_term)
         return BackPropagationNetwork.test(NN, data_train, target_train, epochs, learning_rate, momentum_rate, learning_acceleration, learning_backup, data_test, target_test)
-        
+
     def fnct_aprox(self, reg_term, hidden_layers, epochs, learning_rate, momentum_rate, learning_reward, learning_backup, training_name, testing_name, validation_name):
         print "NOT IMPLEMENTED. Exitting..."
         sys.exit(0)
+
+
+
