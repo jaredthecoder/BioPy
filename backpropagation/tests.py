@@ -1,4 +1,5 @@
 import numpy as np
+import math as math
 from matplotlib.pyplot import plot
 from sklearn.datasets import load_iris, load_digits
 
@@ -126,4 +127,13 @@ class Tests(object):
 
         NN = BackPropagationNetwork(self.logger, data_train, target_train, hidden_layers, reg_term)
         return BackPropagationNetwork.test(NN, data_train, target_train, epochs, learning_rate, momentum_rate, learning_acceleration, learning_backup, data_test, target_test)
-        
+    def Problem_1:
+
+        #calculate problem 1 function
+        f = (1+(math.sin(math.pi*x/2)*math.cos(math.pi*x/2))/2
+
+
+    def Problem_2;
+
+        #calculate problem 2 function
+        f = 3/13 * (x*x/2 + y*y/3 + z*z/4)
