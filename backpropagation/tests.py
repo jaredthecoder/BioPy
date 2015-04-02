@@ -18,20 +18,20 @@ class Tests(object):
     def run_tests(self):
         if self.args.test_type == 'x':
             self.logger.info("====RUNNING XOR TEST====")
-            target_test, Y_pred, cost_list, cost_test_list, learning_rates = self.XOR_test(self.args.reg_term, self.args.hidden_layers, self.args.epochs, self.args.learning_rate, self.args.momentum_rate, self.args.learning_reward, self.args.learning_penalty)
-            return (target_test, Y_pred, cost_list, cost_test_list, learning_rates)
+            target_test, Y_pred, cost_list, cost_test_list, learning_rates, rmse = self.XOR_test(self.args.reg_term, self.args.hidden_layers, self.args.epochs, self.args.learning_rate, self.args.momentum_rate, self.args.learning_reward, self.args.learning_penalty)
+            return (target_test, Y_pred, cost_list, cost_test_list, learning_rates, rmse)
         elif self.args.test_type == 'd':
             self.logger.info("====RUNNING DIGITS TEST====")
-            target_test, Y_pred, cost_list, cost_test_list, learning_rates = self.digits_test(self.args.reg_term, self.args.hidden_layers, self.args.epochs, self.args.learning_rate, self.args.momentum_rate, self.args.learning_reward, self.args.learning_penalty)
-            return (target_test, Y_pred, cost_list, cost_test_list, learning_rates)
+            target_test, Y_pred, cost_list, cost_test_list, learning_rates, rmse = self.digits_test(self.args.reg_term, self.args.hidden_layers, self.args.epochs, self.args.learning_rate, self.args.momentum_rate, self.args.learning_reward, self.args.learning_penalty)
+            return (target_test, Y_pred, cost_list, cost_test_list, learning_rates, rmse)
         elif self.args.test_type == 'i':
             self.logger.info("====RUNNING IRIS TEST====")
-            target_test, Y_pred, cost_list, cost_test_list, learning_rates = self.iris_test(self.args.reg_term, self.args.hidden_layers, self.args.epochs, self.args.learning_rate, self.args.momentum_rate, self.args.learning_reward, self.args.learning_penalty)
-            return (target_test, Y_pred, cost_list, cost_test_list, learning_rates)
+            target_test, Y_pred, cost_list, cost_test_list, learning_rates, rmse = self.iris_test(self.args.reg_term, self.args.hidden_layers, self.args.epochs, self.args.learning_rate, self.args.momentum_rate, self.args.learning_reward, self.args.learning_penalty)
+            return (target_test, Y_pred, cost_list, cost_test_list, learning_rates, rmse)
         elif self.args.test_type == 'f':
             self.logger.info("====RUNNING FUNCTION APPROXIMATION====")
-            target_test, Y_pred, cost_list, cost_test_list, learning_rates = self.fnct_aprox(self.args.reg_term, self.args.hidden_layers, self.args.epochs, self.args.learning_rate, self.args.momentum_rate, self.args.learning_reward, self.args.learning_penalty, self.args.ftrain, self.args.ftest, self.args.fvalid)
-            return (target_test, Y_pred, cost_list, cost_test_list, learning_rates)
+            target_test, Y_pred, cost_list, cost_test_list, learning_rates, rmse = self.fnct_aprox(self.args.reg_term, self.args.hidden_layers, self.args.epochs, self.args.learning_rate, self.args.momentum_rate, self.args.learning_reward, self.args.learning_penalty, self.args.ftrain, self.args.ftest, self.args.fvalid)
+            return (target_test, Y_pred, cost_list, cost_test_list, learning_rates, rmse)
 
 
     def translate_to_binary_array(self, target):
@@ -138,12 +138,19 @@ class Tests(object):
         return BackPropagationNetwork.test(NN, data_train, target_train, epochs, learning_rate, momentum_rate, learning_acceleration, learning_backup, data_test, target_test)
 
     def fnct_aprox(self, reg_term, hidden_layers, epochs, learning_rate, momentum_rate, learning_acceleration, learning_backup, training_name, testing_name, validation_name):
+
         #read in train
         data_train, target_train = self.parse_file(training_name, 200)
+        np.random.shuffle(data_train)
+        np.random.shuffle(target_train)
         #read in test
         data_test, target_test = self.parse_file(testing_name, 100)
+        np.random.shuffle(data_test)
+        np.random.shuffle(target_test)
         #read in validation
         data_val, target_val = self.parse_file(validation_name, 50)
+        np.random.shuffle(data_val)
+        np.random.shuffle(target_val)
 
         NN = BackPropagationNetwork(self.logger, data_train, target_train, hidden_layers, reg_term)
         return BackPropagationNetwork.test(NN, data_train, target_train, epochs, learning_rate, momentum_rate, learning_acceleration, learning_backup, data_test, target_test, data_val = data_val,target_val = target_val)
