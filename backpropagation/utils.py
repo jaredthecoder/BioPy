@@ -25,3 +25,62 @@ def printmat(arr,row_labels=[], col_labels=[]): #print a 2d numpy array (maybe) 
             print '%s [%s]' % (format__1(rw,row_label), ' '.join(format__1(max_chars,i) for i in row))
     else:
         raise Exception("This case is not implemented...either both row_labels and col_labels must be given or neither.")
+
+def parse_file(self, filename, num_lines, num_inputs):
+    data = np.zeros(num_lines, num_inputs)
+    target = np.zeros(num_lines)
+    f = open(filename, 'r')
+    for index, line in enumerate(f):
+        values = line.split(" ")
+        num_inpust = len(values)
+        for i in range(0, num_inputs - 1):
+            data[index][i] = int(values[i])
+        target[index][num_inputs-1] = values[num_inputs-1]
+    f.close()
+    return data, target
+
+def save_data(save_path, target_test, Y_pred, cost_list, cost_test_list, learning_rates, experiment_number):
+    
+    # Saving error/cost values
+
+    # Save in .npz, which is easily readable by Python Numpy for later use
+    cost_npz_file = "%s/cost-info-file-npz-exp-%s.npz" % (save_path, experiment_number)
+    np.savez(cost_npz_file, cost_list, cost_test_list)
+
+    # Also, save as text for human readability
+    cost_txt_file = "%s/cost-info-file-txt-exp-%s.txt" % (save_path, experiment_number)
+    np.savetxt(cost_txt_file, cost_list, fmt='%.8f', delimiter=',')
+
+    cost_test_txt_file = "%s/cost-test-info-file-txt-exp-%s.txt" % (save_path, experiment_number)
+    np.savetxt(cost_test_txt_file, cost_test_list, fmt='%.8f', delimiter=',')
+
+
+    # Saving target and predicted values values
+
+    # Save in .npz, which is easily readable by Python Numpy for later use
+    tp_npz_file = "%s/target-predicted-info-file-npz-exp-%s.npz" % (save_path, experiment_number)
+    np.savez(tp_npz_file, target_test, Y_pred)
+
+    # Also, save as text for human readability
+    target_txt_file = "%s/target-info-file-txt-exp-%s.txt" % (save_path, experiment_number)
+    np.savetxt(target_txt_file, target_test, fmt='%.8f', delimiter=',')
+
+    predicted_txt_file = "%s/predicted-info-file-txt-exp-%s.txt" % (save_path, experiment_number)
+    np.savetxt(predicted_txt_file, Y_pred, fmt='%.8f', delimiter=',')
+
+
+    # Save learning rates
+
+    # Save in .npz, which is easily readable by Python Numpy for later use
+    lr_npz_file = "%s/learning-rates-info-file-npz-exp-%s.npz" % (save_path, experiment_number)
+    np.savez(lr_npz_file, learning_rates)
+
+    # Also, save as text for human readability
+    lr_txt_file = "%s/learning-rates-info-file-txt-exp-%s.txt" % (save_path, experiment_number)
+    np.savetxt(lr_txt_file, learning_rates, fmt='%.8f', delimiter=',')
+
+
+
+
+
+

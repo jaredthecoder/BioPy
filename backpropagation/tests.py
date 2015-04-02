@@ -6,6 +6,7 @@ from matplotlib.pyplot import plot
 from sklearn.datasets import load_iris, load_digits
 
 from network import BackPropagationNetwork
+from utils import *
 
 class Tests(object):
 
@@ -15,8 +16,6 @@ class Tests(object):
         self.args = args
 
     def run_tests(self):
-        self.args.hidden_layers = [int(x[0]) for x in self.args.hidden_layers]
-
         if self.args.test_type == 'x':
             self.logger.info("====RUNNING XOR TEST====")
             target_test, Y_pred, cost_list, cost_test_list, learning_rates = self.XOR_test(self.args.reg_term, self.args.hidden_layers, self.args.epochs, self.args.learning_rate, self.args.momentum_rate, self.args.learning_reward, self.args.learning_penalty)
@@ -146,17 +145,4 @@ class Tests(object):
         #read in validation
         data_val, target_val = parse_file(validation_name, 50)
         NN = BackPropagationNetwork(self.logger, data_train, target_train, hidden_layers, reg_term)
-        return NN.test(data_train, target_train, epochs, learning_rate, momentum_rate, learning_reward, learning_penalty, data_test, target_test, data_val=data_val, target_val=target_val);
-
-    def parse_file(self, filename, num_lines, num_inputs):
-        data = np.zeros(num_lines, num_inputs)
-        target = np.zeros(num_lines)
-        f = open(filename, 'r')
-        for index, line in enumerate(f):
-            values = line.split(" ")
-            num_inpust = len(values)
-            for i in range(0, num_inputs - 1):
-                data[index][i] = int(values[i])
-            target[index][num_inputs-1] = values[num_inputs-1]
-        f.close()
-        return data, target
+        return BackPropagationNetwork.test(data_train, target_train, epochs, learning_rate, momentum_rate, learning_reward, learning_penalty, data_test, target_test, data_val, target_val);

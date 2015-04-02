@@ -120,7 +120,6 @@ def plot_graph_data(experiment_number, nvec, avg_stable_prob, avg_unstable_prob,
     return file_path + '/' + root_path + '/' + path
 
 # Plot the Histogram
-# CS427/527 ONLY
 def plot_histogram(avg_basin_size, experiment_number):
 
     (num_rows, num_cols) = avg_basin_size.shape
