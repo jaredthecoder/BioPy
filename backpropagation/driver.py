@@ -24,10 +24,10 @@ def recursive_run(hidden_layers, learning_rate, exp, tests):
 			for i in hidden_layers:
 				i = 1
 			hidden_layers.append(0)
-		hidden_layers[len(hidden_layers)-1] += 1 
+		hidden_layers[len(hidden_layers)-1] += 1
    	if recursive_run(hidden_layers, learning_rate, exp, tests) == 0:
    		return 0
    	else:
    		return 1
 
-recursive_run([1], .1,0, ['x', 'a', 'd', 'f'])
+recursive_run([1], .1,0, ['x', 'i', 'd', 'f'])
