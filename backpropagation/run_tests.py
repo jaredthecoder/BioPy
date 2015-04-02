@@ -110,8 +110,19 @@ if __name__=="__main__":
     test_suite = Tests(logger, args)
     target_test, Y_pred, cost_list, cost_test_list, learning_rates = test_suite.run_tests()
 
-    logger.info('Accuracy: ' + str(accuracy_score(target_test, np.rint(Y_pred).astype(int))))
-    logger.info('\n' + str(classification_report(target_test, np.rint(Y_pred).astype(int))))
+    if args.test_type != 'f':
+        logger.info('Accuracy: ' + str(accuracy_score(target_test, np.rint(Y_pred).astype(int))))
+        logger.info('\n' + str(classification_report(target_test, np.rint(Y_pred).astype(int))))
+    else:
+        target_test_1d = target_test.ravel()
+        Y_pred_1d = Y_pred.ravel()
+        distance = 0
+
+        for i in range(len(target_test_1d)):
+            distance += abs(Y_pred_1d[i] - target_test_1d[i])
+
+        avg_distance = distance / len(target_test_1d)
+        logger.info("Average Distance between total actual output and predicted output: %s" % (str(avg_distance)))
 
     save_path = 'results/data/Experiment-%s' % (experiment_number)
     save_data(save_path, target_test, Y_pred, cost_list, cost_test_list, learning_rates, experiment_number)
