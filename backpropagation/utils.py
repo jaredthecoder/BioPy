@@ -26,20 +26,7 @@ def printmat(arr,row_labels=[], col_labels=[]): #print a 2d numpy array (maybe) 
     else:
         raise Exception("This case is not implemented...either both row_labels and col_labels must be given or neither.")
 
-def parse_file(self, filename, num_lines, num_inputs):
-    data = np.zeros(num_lines, num_inputs)
-    target = np.zeros(num_lines)
-    f = open(filename, 'r')
-    for index, line in enumerate(f):
-        values = line.split(" ")
-        num_inpust = len(values)
-        for i in range(0, num_inputs - 1):
-            data[index][i] = int(values[i])
-        target[index][num_inputs-1] = values[num_inputs-1]
-    f.close()
-    return data, target
-
-def save_data(save_path, target_test, Y_pred, cost_list, cost_test_list, learning_rates, experiment_number):
+def save_data(save_path, target_test, Y_pred, cost_list, cost_test_list, learning_rates, rmse, experiment_number):
     
     # Saving error/cost values
 
@@ -78,6 +65,16 @@ def save_data(save_path, target_test, Y_pred, cost_list, cost_test_list, learnin
     # Also, save as text for human readability
     lr_txt_file = "%s/learning-rates-info-file-txt-exp-%s.txt" % (save_path, experiment_number)
     np.savetxt(lr_txt_file, learning_rates, fmt='%.8f', delimiter=',')
+
+    # Save RMSE
+
+    # Save in .npz, which is easily readable by Python Numpy for later use
+    rmse_npz_file = "%s/rmse-info-file-npz-exp-%s.npz" % (save_path, experiment_number)
+    np.savez(rmse_npz_file, rmse)
+
+    # Also, save as text for human readability
+    rmse_txt_file = "%s/rmse-info-file-txt-exp-%s.txt" % (save_path, experiment_number)
+    np.savetxt(rmse_txt_file, rmse, fmt='%.8f', delimiter=',')
 
 
 

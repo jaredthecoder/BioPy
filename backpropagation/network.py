@@ -65,7 +65,6 @@ class BackPropagationNetwork(object):
         self.Theta_L = [ 2 * (np.random.rand(unit_count, unit_count_list[l-1]+1) - 0.5) for l, unit_count in enumerate(unit_count_list) if l > 0]
 
     def print_theta(self):
-        """self.logger.info(_theta(self) self.logger.info(s self.Theta_L and architecture info to std out"""
 
         T = len(self.Theta_L)
 
@@ -286,8 +285,8 @@ class BackPropagationNetwork(object):
             self.logger.info('Theta: %s' % t)
             self.logger.info("\n" + str(np.round(theta, 2)))
 
-        self.logger.info('i: %ld - cost:      %ld', i, cost_list[i])
-        self.logger.info('i: %ld - cost test: %ld', i, cost_test_list[i])
+        self.logger.info('i: %ld - cost:      %ld' %  (i, cost_list[i]))
+        self.logger.info('i: %ld - cost test: %ld' %  (i, cost_test_list[i]))
 
         return cost_list, learning_rates, cost_test_list
 

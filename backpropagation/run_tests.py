@@ -108,7 +108,9 @@ if __name__=="__main__":
     logger.info("Program Parameters: " + str(args))
 
     test_suite = Tests(logger, args)
-    target_test, Y_pred, cost_list, cost_test_list, learning_rates = test_suite.run_tests()
+    target_test, Y_pred, cost_list, cost_test_list, learning_rates, rmse = test_suite.run_tests()
+
+
 
     if args.test_type != 'f':
         logger.info('Accuracy: ' + str(accuracy_score(target_test, np.rint(Y_pred).astype(int))))
@@ -125,9 +127,10 @@ if __name__=="__main__":
         logger.info("Average Distance between total actual output and predicted output: %s" % (str(avg_distance)))
 
     save_path = 'results/data/Experiment-%s' % (experiment_number)
-    save_data(save_path, target_test, Y_pred, cost_list, cost_test_list, learning_rates, experiment_number)
+    save_data(save_path, target_test, Y_pred, cost_list, cost_test_list, learning_rates, rmse, experiment_number)
 
     # Plotting 
     if args.plot:
         plot_file_path = 'results/data/Experiment-%s' % (experiment_number)
-        plot_error_versus_epochs(plot_file_path, experiment_number, target_test, Y_pred, cost_list, cost_test_list, learning_rates)
+        plot_cost_versus_epochs(plot_file_path, experiment_number, cost_list, cost_test_list)
+        plot_rmse_versus_epochs(plot_file_path, experiment_number, rmse)
