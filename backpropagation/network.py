@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-#
 
 import numpy as np
+import math as math
 from matplotlib.pyplot import plot
 from sklearn.datasets import load_iris, load_digits
 
@@ -235,7 +236,7 @@ class BackPropagationNetwork(object):
         # List of results of cost functions
         cost_list = [0] * self.epochs
         cost_test_list = [0] * self.epochs
-
+        rmse = [0] * self.epoch
         # Initial Forward Pass
         a_N_train, Y_pred = self.predict(X_train)
         # Initial Cost
@@ -280,6 +281,12 @@ class BackPropagationNetwork(object):
 
             if Y_test is not None:
                 a_N_test, Y_pred_test = self.predict(X_test)
+                error = 0
+                for (a, b) in zip(Y_test, Y_pred):
+                    error += (a-b)*(a-b)
+                rmse[i] = math.sqrt((1/(2*len(Y_test)))*error)
+                self.logger.info('Epoch %d:' % i)
+                self.logger.info('RMSE: %f' % rmse[i])
                 cost_test_list[i] = self.cost_function(Y_test, Y_pred_test)
 
         for t, theta in enumerate(self.Theta_L):
@@ -289,7 +296,7 @@ class BackPropagationNetwork(object):
         self.logger.info('i: %ld - cost:      %ld', i, cost_list[i])
         self.logger.info('i: %ld - cost test: %ld', i, cost_test_list[i])
 
-        return cost_list, learning_rates, cost_test_list
+        return cost_list, learning_rates, cost_test_list, rmse
 
     def test(self, data_train, target_train, epochs, learning_rate, momentum_rate, learning_reward, learning_penalty, data_test=None, target_test=None, data_val=None, target_val=None):
 
@@ -303,7 +310,7 @@ class BackPropagationNetwork(object):
         # self.initialize_theta(data_train.shape[1], target_train.shape[1], hidden_unit_length_list)
 
         # Fit
-        cost_list, learning_rates, cost_test_list = self.fit(data_train, target_train, X_test=data_test, Y_test=target_test)
+        cost_list, learning_rates, cost_test_list,rmse = self.fit(data_train, target_train, X_test=data_test, Y_test=target_test)
 
         # Predict for test log
         self.logger.info('Test results:')
@@ -315,6 +322,10 @@ class BackPropagationNetwork(object):
             self.logger.info(p)
         self.logger.info('CE on Test Set')
         self.logger.info(self.cost_function(target_test , Y_pred))
+        for (a, b) in zip(target_test, Y_pred):
+            error += (a-b)*(a-b)
+            error = math.sqrt((1/(2*len(target_test)))*error)
+        self.logger.info('RMSE on Test Set: %d' %error)
 
         #Predict for validation results
 
@@ -328,4 +339,8 @@ class BackPropagationNetwork(object):
                 self.logger.info(p)
             self.logger.info('CE on Validation Set')
             self.logger.info(self.cost_function(target_val , vY_pred))
-        return target_test, Y_pred, cost_list, cost_test_list, learning_rates
+            for (a, b) in zip(target_val, vY_pred):
+                error += (a-b)*(a-b)
+            error = math.sqrt((1/(2*len(target_val)))*error)
+        self.logger.info('RMSE on Validation Set: %d' %error)
+        return target_test, Y_pred, cost_list, cost_test_list, learning_rates, rmse
