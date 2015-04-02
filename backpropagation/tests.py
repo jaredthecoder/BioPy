@@ -140,23 +140,22 @@ class Tests(object):
 
     def fnct_aprox(self, reg_term, hidden_layers, epochs, learning_rate, momentum_rate, learning_acceleration, learning_backup, training_name, testing_name, validation_name):
         #read in train
-        data_train, target_train = parse_file(training_name, 200)
+        data_train, target_train = self.parse_file(training_name, 200)
         #read in test
-        data_test, target_test = parse_file(testing_name, 100)
+        data_test, target_test = self.parse_file(testing_name, 100)
         #read in validation
-        data_val, target_val = parse_file(validation_name, 50)
-        NN = BackPropagationNetwork(self.logger, data_train, target_train, hidden_layers, reg_term)
-        return NN.test(data_train, target_train, epochs, learning_rate, momentum_rate, learning_reward, learning_penalty, data_test, target_test, data_val=data_val, target_val=target_val);
+        data_val, target_val = self.parse_file(validation_name, 50)
 
-    def parse_file(self, filename, num_lines, num_inputs):
-        data = np.zeros(num_lines, num_inputs)
-        target = np.zeros(num_lines)
+        NN = BackPropagationNetwork(self.logger, data_train, target_train, hidden_layers, reg_term)
+        return BackPropagationNetwork.test(NN, data_train, target_train, epochs, learning_rate, momentum_rate, learning_acceleration, learning_backup, data_test, target_test, data_val = data_val,target_val = target_val)
+
+    def parse_file(self, filename, num_lines):
+        data = []
+        target = []
         f = open(filename, 'r')
-        for index, line in enumerate(f):
-            values = line.split(" ")
-            num_inpust = len(values)
-            for i in range(0, num_inputs - 1):
-                data[index][i] = int(values[i])
-            target[index][num_inputs-1] = values[num_inputs-1]
+        for line in f:
+            floats = map(float, line.split())
+            target.append([floats.pop()])
+            data.append(floats)
         f.close()
-        return data, target
+        return np.array(data), np.array(target)

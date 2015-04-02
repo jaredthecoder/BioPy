@@ -317,6 +317,7 @@ class BackPropagationNetwork(object):
         self.logger.info(self.cost_function(target_test , Y_pred))
 
         #Predict for validation results
+
         if data_val is not None:
             self.logger.info('Validation results:')
             va_N, vY_pred = self.predict(data_val)
@@ -326,5 +327,5 @@ class BackPropagationNetwork(object):
             for p in zip(target_val[:10], np.round(vY_pred[:10],3)):
                 self.logger.info(p)
             self.logger.info('CE on Validation Set')
-            self.logger.info(self.cost_function(target_test , vY_pred))
+            self.logger.info(self.cost_function(target_val , vY_pred))
         return target_test, Y_pred, cost_list, cost_test_list, learning_rates
