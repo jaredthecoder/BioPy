@@ -64,7 +64,7 @@ def plot_cost_versus_epochs(plot_file_path, experiment_number, cost_list, cost_t
 def plot_rmse_versus_epochs(plot_file_path, experiment_number, rmse):
 
     x1 = np.arange(len(rmse))
-    y1 = cost_list
+    y1 = rmse
 
     fig = plt.figure()
     plt.subplot(111)
