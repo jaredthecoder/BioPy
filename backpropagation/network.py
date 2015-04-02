@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-#
 
 import numpy as np
+np.set_printoptions(precision=4, suppress=True)
 import math as math
 from matplotlib.pyplot import plot
 from sklearn.datasets import load_iris, load_digits
@@ -280,26 +281,26 @@ class BackPropagationNetwork(object):
 
             if Y_test is not None:
                 a_N_test, Y_pred_test = self.predict(X_test)
-                error = 0
-                error = Y_test - Y_pred_test
-                for a in error:
-                    a = a*a
-                error = np.sum(error)
-                print error
-                rmse[i] = math.sqrt((1/(2*len(Y_test)))*error)
-                print len(Y_test)
-                print rmse[i]
-                return 0
-                self.logger.info('Epoch %d:' % i)
-                self.logger.info('RMSE: %f' % rmse[i])
+                
+                sum_e = 0
+                for j in range(len(Y_test)):
+                    sum_e += pow((Y_test[j] - Y_pred_test[j]), 2)
+
+                if len(sum_e) > 1:
+                    sum_e = np.sum(sum_e)
+
+                rmse_epoch = math.sqrt((1.0 / (2.0 * len(Y_test))) * sum_e)
+                rmse[i] = rmse_epoch
+                
                 cost_test_list[i] = self.cost_function(Y_test, Y_pred_test)
 
         for t, theta in enumerate(self.Theta_L):
             self.logger.info('Theta: %s' % t)
-            self.logger.info("\n" + str(np.round(theta, 2)))
+            for theta_i in np.round(theta, 2):
+                self.logger.info("%s" % str(theta_i))   
 
-        self.logger.info('i: %ld - cost:      %ld' %  (i, cost_list[i]))
-        self.logger.info('i: %ld - cost test: %ld' %  (i, cost_test_list[i]))
+        #self.logger.info('i: %ld - cost:      %ld' %  (i, cost_list[i]))
+        #self.logger.info('i: %ld - cost test: %ld' %  (i, cost_test_list[i]))
 
         return cost_list, learning_rates, cost_test_list, rmse
 
@@ -316,37 +317,54 @@ class BackPropagationNetwork(object):
 
         # Fit
         cost_list, learning_rates, cost_test_list, rmse = self.fit(data_train, target_train, X_test=data_test, Y_test=target_test)
-        
+
         error = 0
         # Predict for test log
-        self.logger.info('Test results:')
+        plot_vals = []
         a_N, Y_pred = self.predict(data_test)
+        self.logger.info('###################################Testing Results###################################')
         self.logger.info('Given X:')
-        self.logger.info("\n" + str(data_test[:5]))
+        for x in data_test[:5]:
+            self.logger.info(x)
+        for p in zip(target_test[:10], np.round(Y_pred[:10],6)):
+            plot_vals.append(p)
         self.logger.info('Actual Y, Predicted Y:')
-        for p in zip(target_test[:10], np.round(Y_pred[:10],3)):
-            self.logger.info(p)
-        self.logger.info('CE on Test Set')
-        self.logger.info(self.cost_function(target_test , Y_pred))
-        for a in range(len(target_val)-1):
-            error += (target_val[a]-Y_pred[a])*(target_test[a]-Y_pred[a])
-        error = math.sqrt((1/(2*len(target_test)))*error)
-        self.logger.info('RMSE on Test Set: %d' %error)
+        for pv in plot_vals:
+            self.logger.info("%s" % str(pv))
+        self.logger.info('Cost Efficiency on Test Set: %s' % str(self.cost_function(target_test , Y_pred)))
+        sum_e = 0
+        for j in range(len(target_test)):
+            sum_e += pow((target_test[j] - Y_pred[j]), 2)
+        if len(sum_e) > 1:
+            sum_e = np.sum(sum_e)
+        self.logger.info('Final Testing Sum Over Outputs: %s' % str(sum_e))
+        rmse_test_final = math.sqrt((1.0 / (2.0 * len(target_test))) * sum_e)
+        self.logger.info('Final Testing RMSE: %s' % str(rmse_test_final))
 
         error = 0
         #Predict for validation results
 
         if data_val is not None:
-            self.logger.info('Validation results:')
+            plot_vals = []
             va_N, vY_pred = self.predict(data_val)
+            self.logger.info('###################################Validation Results###############################')
             self.logger.info('Given X:')
-            self.logger.info("\n" + str(data_val[:5]))
+            for x in data_val[:5]:
+                self.logger.info(x)
+            for p in zip(target_val[:10], np.round(vY_pred[:10],6)):
+                plot_vals.append(p)
             self.logger.info('Actual Y, Predicted Y:')
-            for p in zip(target_val[:10], np.round(vY_pred[:10],3)):
-                self.logger.info(p)
-            self.logger.info('CE on Validation Set')
-            self.logger.info(self.cost_function(target_val , vY_pred))
-            error =np.sum((target_val - vY_pred)*(target_val-vY_pred))
-            error = math.sqrt((1/(2*len(target_val)))*error)
-        self.logger.info('RMSE on Validation Set: %d' %error)
+            for pv in plot_vals:
+                self.logger.info((pv))
+            self.logger.info('Cost Efficiency on Validation Set: %s' % str(self.cost_function(target_val , vY_pred)))
+            sum_e = 0
+            for j in range(len(target_val)):
+                sum_e += pow((target_val[j] - vY_pred[j]), 2)
+            if len(sum_e) > 1:
+                sum_e = np.sum(sum_e)
+            self.logger.info('Final Validation Sum Over Outputs: %s' % str(sum_e))
+            rmse_val_final = math.sqrt((1.0 / (2.0 * len(target_val))) * sum_e)
+            self.logger.info('Final Validation RMSE: %s' % str(rmse_val_final))
+
         return target_test, Y_pred, cost_list, cost_test_list, learning_rates, rmse
+
