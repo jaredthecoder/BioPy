@@ -286,7 +286,7 @@ class BackPropagationNetwork(object):
                     a = a*a
                 error = np.sum(error)
                 print error
-                rmse[i] = math.sqrt((1/(2*len(Y_test)))*error)
+                rmse[i] = math.sqrt((1.0/(2.0*len(Y_test)))*error)
                 print len(Y_test)
                 print rmse[i]
                 return 0
