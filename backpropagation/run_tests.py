@@ -63,7 +63,7 @@ def setup_argparser():
     optionalArguments.add_argument('--ftest', dest='ftest', required=False, type=str, default=None, help="Testing data file for function approximation test. Default is None.")
     optionalArguments.add_argument('--fvalid', dest='fvalid', required=False, type=str, default=None, help="Validation data file for function approximation test. Default is None.")
     optionalArguments.add_argument('--plot', dest='plot', required=False, type=bool, default=True, help="Specify if data is to be plotted. Default is True.")
-
+    optionalArguments.add_argument('--autoscale', dest='autoscale', required=False, type=bool, default=True, help="Specify plots should be autoscaled to data frame. Default is True.")
     return parser
 
 
@@ -104,18 +104,25 @@ if __name__=="__main__":
                 os.makedirs('Experiment-' + str(experiment_number))
 
     logger = setup_logger('results/data/Experiment-' + str(experiment_number), "__main__", "main")
-    logger.info("==========Experiment Number %s==========", experiment_number)
-    logger.info("Program Parameters: " + str(args))
+    logger.info("###################################RUNNING EXPERIMENT NUM %s#########################", str(experiment_number))
+    logger.info("Program Arguments:")
+    args_dict = vars(args)
+    for key, value in args_dict.iteritems() :
+        logger.info("%s=%s" % (str(key), str(value)))   
 
     test_suite = Tests(logger, args)
     target_test, Y_pred, cost_list, cost_test_list, learning_rates, rmse = test_suite.run_tests()
 
-
+    Y_pred_copy = np.copy(Y_pred)
+    accuracy_score_Y_pred =  np.rint(Y_pred_copy).astype(int)
 
     if args.test_type != 'f':
-        logger.info('Accuracy: ' + str(accuracy_score(target_test, np.rint(Y_pred).astype(int))))
-        logger.info('\n' + str(classification_report(target_test, np.rint(Y_pred).astype(int))))
+        logger.info('###################################Accuracy Results###############################')
+        logger.info('Accuracy: ' + str(accuracy_score(target_test, accuracy_score_Y_pred)))
+        logger.info('\n' + str(classification_report(target_test, accuracy_score_Y_pred)))
     else:
+        logger.info('###################################Accuracy Results###############################')
+
         target_test_1d = target_test.ravel()
         Y_pred_1d = Y_pred.ravel()
         distance = 0
@@ -124,7 +131,12 @@ if __name__=="__main__":
             distance += abs(Y_pred_1d[i] - target_test_1d[i])
 
         avg_distance = distance / len(target_test_1d)
-        logger.info("Average Distance between total actual output and predicted output: %s" % (str(avg_distance)))
+        logger.info("Accuracy Score: %s" % (str(avg_distance)))
+        logger.info("NOTE: Accuracy Score is avg. distance between expected and predicted y-values")
+        logger.info("NOTE: Computed using the following code:")
+        logger.info("for i in range(len(target_test_1d)):")
+        logger.info("\tdistance += abs(Y_pred_1d[i] - target_test_1d[i])")
+        logger.info("\tavg_distance = distance / len(target_test_1d)")
 
     save_path = 'results/data/Experiment-%s' % (experiment_number)
     save_data(save_path, target_test, Y_pred, cost_list, cost_test_list, learning_rates, rmse, experiment_number)
@@ -132,5 +144,6 @@ if __name__=="__main__":
     # Plotting 
     if args.plot:
         plot_file_path = 'results/data/Experiment-%s' % (experiment_number)
-        plot_cost_versus_epochs(plot_file_path, experiment_number, cost_list, cost_test_list)
-        plot_rmse_versus_epochs(plot_file_path, experiment_number, rmse)
+        plot_cost_versus_epochs(args.autoscale, plot_file_path, experiment_number, cost_list, cost_test_list)
+        plot_rmse_versus_epochs(args.autoscale, plot_file_path, experiment_number, rmse)
+        plot_learning_rates_versus_epochs(args.autoscale, plot_file_path, experiment_number, learning_rates)

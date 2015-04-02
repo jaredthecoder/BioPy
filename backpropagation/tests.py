@@ -17,19 +17,19 @@ class Tests(object):
 
     def run_tests(self):
         if self.args.test_type == 'x':
-            self.logger.info("====RUNNING XOR TEST====")
+            self.logger.info("###################################RUNNING XOR TEST##################################")
             target_test, Y_pred, cost_list, cost_test_list, learning_rates, rmse = self.XOR_test(self.args.reg_term, self.args.hidden_layers, self.args.epochs, self.args.learning_rate, self.args.momentum_rate, self.args.learning_reward, self.args.learning_penalty)
             return (target_test, Y_pred, cost_list, cost_test_list, learning_rates, rmse)
         elif self.args.test_type == 'd':
-            self.logger.info("====RUNNING DIGITS TEST====")
+            self.logger.info("###################################RUNNING DIGITS TEST###############################")
             target_test, Y_pred, cost_list, cost_test_list, learning_rates, rmse = self.digits_test(self.args.reg_term, self.args.hidden_layers, self.args.epochs, self.args.learning_rate, self.args.momentum_rate, self.args.learning_reward, self.args.learning_penalty)
             return (target_test, Y_pred, cost_list, cost_test_list, learning_rates, rmse)
         elif self.args.test_type == 'i':
-            self.logger.info("====RUNNING IRIS TEST====")
+            self.logger.info("###################################RUNNING IRIS TEST#################################")
             target_test, Y_pred, cost_list, cost_test_list, learning_rates, rmse = self.iris_test(self.args.reg_term, self.args.hidden_layers, self.args.epochs, self.args.learning_rate, self.args.momentum_rate, self.args.learning_reward, self.args.learning_penalty)
             return (target_test, Y_pred, cost_list, cost_test_list, learning_rates, rmse)
         elif self.args.test_type == 'f':
-            self.logger.info("====RUNNING FUNCTION APPROXIMATION====")
+            self.logger.info("###################################RUNNING DIGITS TEST###############################")
             target_test, Y_pred, cost_list, cost_test_list, learning_rates, rmse = self.fnct_aprox(self.args.reg_term, self.args.hidden_layers, self.args.epochs, self.args.learning_rate, self.args.momentum_rate, self.args.learning_reward, self.args.learning_penalty, self.args.ftrain, self.args.ftest, self.args.fvalid)
             return (target_test, Y_pred, cost_list, cost_test_list, learning_rates, rmse)
 
@@ -130,9 +130,12 @@ class Tests(object):
         data_test = np.array([[1,0],[0,1],[1,1],[0,0]])
         target_test = np.array([[1],[1],[0],[0]])
 
-        self.logger.info('Training Data: X & Y')
-        self.logger.info("\n" + str(data_train))
-        self.logger.info("\n" + str(target_train))
+        self.logger.info('Training Data: X')
+        for data_i in data_train:
+            self.logger.info("%s" % str(data_i))
+        self.logger.info('Training Data: Y')
+        for target_i in target_train:
+            self.logger.info("%s" % str(target_i))
 
         NN = BackPropagationNetwork(self.logger, data_train, target_train, hidden_layers, reg_term)
         return BackPropagationNetwork.test(NN, data_train, target_train, epochs, learning_rate, momentum_rate, learning_acceleration, learning_backup, data_test, target_test)
