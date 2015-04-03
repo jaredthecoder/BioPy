@@ -35,8 +35,9 @@ class BackPropagationNetwork(object):
     nn.XOR_test() accepts an optional list of integers to determine the hidden layer architecture
     """
 
-    def __init__(self, logger, n_features, n_classes, hidden_layers, reg_term):
+    def __init__(self, logger, n_features, n_classes, hidden_layers, reg_term, test_type=None):
         self.logger = logger
+        self.test_type = test_type
         self.n_features = n_features
         self.n_classes = n_classes
         self.hidden_layers = hidden_layers
@@ -107,8 +108,6 @@ class BackPropagationNetwork(object):
         Returns cost - list of cost values
         """
 
-        Y.shape
-        Y_pred.shape
         if Y.shape != Y_pred.shape:
             if Y.shape[0] != Y_pred.shape:
                 raise ValueError,'Wrong number of predictions'

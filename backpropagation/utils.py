@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib as plt
 
 def sigmoid(z):
     """sigmoid is a basic sigmoid function returning values from 0-1"""
@@ -76,6 +77,29 @@ def save_data(save_path, target_test, Y_pred, cost_list, cost_test_list, learnin
     rmse_txt_file = "%s/rmse-info-file-txt-exp-%s.txt" % (save_path, experiment_number)
     np.savetxt(rmse_txt_file, rmse, fmt='%.8f', delimiter=',')
 
+def plot_gallery(num_image, images, titles, h, w, n_row=3, n_col=4, plot_file_path=None):
+    """Helper function to plot a gallery of portraits"""
+    plt.figure(figsize=(1.8 * n_col, 2.4 * n_row))
+    plt.subplots_adjust(bottom=0, left=.01, right=.99, top=.90, hspace=.35)
+    for i in range(n_row * n_col):
+        plt.subplot(n_row, n_col, i + 1)
+        plt.imshow(images[i].reshape((h, w)), cmap=plt.cm.gray)
+        plt.title(titles[i], size=12)
+        plt.xticks(())
+        plt.yticks(())
+
+    if plot_file_path is None:
+        plot_file_name = "gallery-image-%s.pdf" % (num_image)
+    else:
+        plot_file_name = "%s/gallery-image-%s.pdf" % (plot_file_path, num_image)
+
+    plt.savefig(plot_file_name, bbox_inches='tight')
+
+
+def title(y_pred, y_test, target_names, i):
+    pred_name = target_names[y_pred[i]].rsplit(' ', 1)[-1]
+    true_name = target_names[y_test[i]].rsplit(' ', 1)[-1]
+    return 'predicted: %s\ntrue:      %s' % (pred_name, true_name)
 
 
 

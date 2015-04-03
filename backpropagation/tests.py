@@ -2,8 +2,12 @@ import sys
 
 import numpy as np
 import math as math
-from matplotlib.pyplot import plot
-from sklearn.datasets import load_iris, load_digits
+import pylab as plt
+from time import time
+from sklearn.datasets import load_iris, load_digits, fetch_lfw_people, fetch_lfw_pairs
+from sklearn.decomposition import RandomizedPCA
+from sklearn.cross_validation import train_test_split as sklearn_train_test_split
+
 
 from network import BackPropagationNetwork
 from utils import *
@@ -31,6 +35,10 @@ class Tests(object):
         elif self.args.test_type == 'f':
             self.logger.info("###################################RUNNING DIGITS TEST###############################")
             target_test, Y_pred, cost_list, cost_test_list, learning_rates, rmse = self.fnct_aprox(self.args.reg_term, self.args.hidden_layers, self.args.epochs, self.args.learning_rate, self.args.momentum_rate, self.args.learning_reward, self.args.learning_penalty, self.args.ftrain, self.args.ftest, self.args.fvalid)
+            return (target_test, Y_pred, cost_list, cost_test_list, learning_rates, rmse)
+        elif self.args.test_type == 'w':
+            self.logger.info("###################################RUNNING FACES TEST###############################")
+            target_test, Y_pred, cost_list, cost_test_list, learning_rates, rmse = self.faces_test(self.args.reg_term, self.args.hidden_layers, self.args.epochs, self.args.learning_rate, self.args.momentum_rate, self.args.learning_reward, self.args.learning_penalty)
             return (target_test, Y_pred, cost_list, cost_test_list, learning_rates, rmse)
 
 
@@ -73,6 +81,12 @@ class Tests(object):
 
         train_target = target_array[shuffled_index[:train_len]]
         test_target = target_array[shuffled_index[train_len:]]
+
+        print train_data.shape
+        print test_data.shape
+
+        print train_target.shape
+        print test_target.shape
 
         self.logger.info('Data Set: %d Observations, %d Features' % (data_array.shape[0], data_array.shape[1]))
         self.logger.info('Training Set: %d Observations, %d Features' % (train_data.shape[0], train_data.shape[1]))
@@ -159,6 +173,7 @@ class Tests(object):
         return BackPropagationNetwork.test(NN, data_train, target_train, epochs, learning_rate, momentum_rate, learning_acceleration, learning_backup, data_test, target_test, data_val = data_val,target_val = target_val)
 
     def parse_file(self, filename, num_lines):
+
         data = []
         target = []
         f = open(filename, 'r')
@@ -168,3 +183,52 @@ class Tests(object):
             data.append(floats)
         f.close()
         return np.array(data), np.array(target)
+
+    def faces_test(self, reg_term, hidden_layers, epochs, learning_rate, momentum_rate, learning_acceleration, learning_backup):
+
+        lfw_people = fetch_lfw_people(min_faces_per_person=70, resize=0.4)
+
+        # introspect the images arrays to find the shapes (for plotting)
+        n_samples, h, w = lfw_people.images.shape
+
+        # for machine learning we use the 2 data directly (as relative pixel
+        # positions info is ignored by this model)
+        X = lfw_people.data
+        n_features = X.shape[1]
+
+        # the label to predict is the id of the person
+        y = lfw_people.target
+        y = self.translate_to_binary_array(y)
+
+
+        target_names = lfw_people.target_names
+        n_classes = target_names.shape[0]
+
+        self.logger.info("n_samples: {}".format(n_samples))
+        self.logger.info("n_features: {}".format(n_features))
+        self.logger.info("n_classes: {}".format(n_classes))
+
+        # split into a training and testing set
+        X_train, X_test, y_train, y_test = sklearn_train_test_split(
+            X, y, test_size=0.25)
+
+        # Compute a PCA (eigenfaces) on the face dataset (treated as unlabeled
+        # dataset): unsupervised feature extraction / dimensionality reduction
+        n_components = 150
+
+        self.logger.info("Extracting the top %d eigenfaces from %d faces"
+              % (n_components, X_train.shape[0]))
+        t0 = time()
+        pca = RandomizedPCA(n_components=n_components, whiten=True).fit(X_train)
+        self.logger.info("done in %0.3fs" % (time() - t0))
+
+        eigenfaces = pca.components_.reshape((n_components, h, w))
+
+        self.logger.info("Projecting the input data on the eigenfaces orthonormal basis")
+        t0 = time()
+        X_train_pca = pca.transform(X_train)
+        X_test_pca = pca.transform(X_test)
+        self.logger.info("done in %0.3fs" % (time() - t0))
+
+        NN = BackPropagationNetwork(self.logger, X_train_pca, y_train, hidden_layers, reg_term)
+        return BackPropagationNetwork.test(NN, X_train_pca, y_train, epochs, learning_rate, momentum_rate, learning_acceleration, learning_backup, X_test_pca, y_test)

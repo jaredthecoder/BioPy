@@ -121,3 +121,17 @@ def plot_accuracy(plot_file_path, experiment_number, target_test, Y_pred):
     plt.savefig(plot_file_name, bbox_inches='tight')
 
     return plot_file_name
+
+def facial_recognition_graphs():
+    
+    prediction_titles = [title(y_pred, y_test, target_names, i)
+                         for i in range(y_pred.shape[0])]
+
+    plot_gallery(X_test, prediction_titles, h, w)
+
+    # plot the gallery of the most significative eigenfaces
+
+    eigenface_titles = ["eigenface %d" % i for i in range(eigenfaces.shape[0])]
+    plot_gallery(eigenfaces, eigenface_titles, h, w)
+
+    plt.show()

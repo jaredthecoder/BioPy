@@ -31,7 +31,7 @@ def cd(newPath):
 
 
 def is_valid_ttype_option(ttype):
-    options = ['x', 'd', 'i', 'f']
+    options = ['x', 'd', 'i', 'f', 'w']
     if ttype in options:
         return ttype
     else:
@@ -50,7 +50,7 @@ def setup_argparser():
 
     requiredArguments = parser.add_argument_group('required Arguments')
     requiredArguments.add_argument('-exp', dest='experiment_number', required=True, type=str, help="Number of this experiment.")
-    requiredArguments.add_argument('-ttype', dest='test_type', required=True, type=is_valid_ttype_option, help="Type of test to run. Choose from 'x', 'd', 'i', or 'f'")
+    requiredArguments.add_argument('-ttype', dest='test_type', required=True, type=is_valid_ttype_option, help="Type of test to run. Choose from 'x', 'd', 'i', 'f', or 'w'")
     requiredArguments.add_argument('-hidden_layers', dest='hidden_layers', required=True, type=int, nargs='+', help="A list of numbers which represent each hidden layer and the affiliate nodes in that layer.")
     optionalArguments = parser.add_argument_group('optional Arguments')
     optionalArguments.add_argument('--epochs', dest='epochs', required=False, type=int, default=2500, help="Number of epochs to train on. Default is 2500.")
