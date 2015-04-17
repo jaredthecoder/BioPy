@@ -97,10 +97,12 @@ def main():
         logger.info("%s=%s" % (str(key), str(value)))
 
 
-    gen_alg = BaseGeneticAlgorithm(args)
+    logger.info("Running Base Genetic Algorithm...")
+    gen_alg = BaseGeneticAlgorithm(args, logger)
+    gen_alg.run()
 
     if args.plot:
-        print "Going to plot."
+        logger.debug("Going to plot, but don't have data left.")
 
 if __name__=="__main__":
     main()

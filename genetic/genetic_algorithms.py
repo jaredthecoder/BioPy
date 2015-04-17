@@ -54,23 +54,53 @@ class BaseGeneticAlgorithm(object):
 
         # Helper objects
         self.logger = logger
+        self.orig_fitness_vals = numpy.zeros((G, N))
+        self.norm_fitness_vals = numpy.zeros((G, N))
+        self.total_fitness_vals = numpy.zeros((G, N))
 
         # Initialize the population
+        logger.info("Initializing Population...")
         self.initialize()
+        logger.info("Initialization Complete.")
 
     # Initialize the Population
-    def initialize(self):
+    def initialize(self, g):
         # Generate N random bitstrings
         for i in range(self.N):
             tmp_bitstring = ''.join(random.choice('01') for _ in range(N))
             tmp_bitstring = bs.BitArray(bin=tmp_bitstring)
             self.population.append(tmp_bitstring)
 
+    # Currently on step 3 of Van Hornweders write-up
     # Calculate the fitness of each individual of the population.
     def fitness(self):
+        total_fitness = 0
+
         # Step through each bitstring in the population
-        for bitstring in population:
+        for i, bitstring in enumerate(self.population):
             # Get the integer value of the string
             sum = bitstring.uint
-            fitness_val = pow((sum / pow(2, self.l), 10)
+            fitness_val = (pow((sum / pow(2, self.l), 10))
+            orig_fitness_vals[g][i] = fitness_val
+            total_fitness += fitness_val
+
+        for i in range(self.N):
+            norm_fitness_val = (orig_fitness_vals[g][i] / total_fitness)
+            norm_fitness_vals[g][i] = norm_fitness_val
+            if i != 0:
+                total_fitness_vals[g][i] = (norm_fitness_valsi[g][i - 1] + norm_fitness_val)
+            else:
+                total_fitness_vals[g][i] = norm_fitness_val
+
+        for i in range(self.N / 2):
+            rand_nums = np.random.uniform(0, 1, 2)
+
+
+    # Run through all the generations
+    # After the fitness function is done, this function can be finished
+    def run(self):
+        for g in range(self.G):
+            logger.info("Running fitness function on generation %d..." % g)
+            fitness(g)
+            logger.info("Generation %d finished." % g)
 
