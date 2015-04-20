@@ -122,6 +122,21 @@ class BackPropagationNetwork(object):
         return cost
 
 
+    def predict(self, X):
+        """
+        predict calculates activations for all layers, returns prediction for Y
+
+        Parameters
+            X is array of input features dimensions n_observations by n_features
+
+        Returns
+            a_N is outputs of all units
+            a_N[L] is array of predicted Y values dimensions n_observations by n_classes
+        """
+
+        m = len(X)
+        T = len(self.Theta_L)
+
         a_N_predict = []		# List of activations including bias unit for non-output layers
 
         # Input Layer inputs
@@ -265,7 +280,7 @@ class BackPropagationNetwork(object):
 
             if Y_test is not None:
                 a_N_test, Y_pred_test = self.predict(X_test)
-
+                
                 sum_e = 0
                 for j in range(len(Y_test)):
                     sum_e += pow((Y_test[j] - Y_pred_test[j]), 2)
@@ -275,13 +290,13 @@ class BackPropagationNetwork(object):
 
                 rmse_epoch = math.sqrt((1.0 / (2.0 * len(Y_test))) * sum_e)
                 rmse[i] = rmse_epoch
-
+                
                 cost_test_list[i] = self.cost_function(Y_test, Y_pred_test)
 
         for t, theta in enumerate(self.Theta_L):
             self.logger.info('Theta: %s' % t)
             for theta_i in np.round(theta, 2):
-                self.logger.info("%s" % str(theta_i))
+                self.logger.info("%s" % str(theta_i))   
 
         #self.logger.info('i: %ld - cost:      %ld' %  (i, cost_list[i]))
         #self.logger.info('i: %ld - cost test: %ld' %  (i, cost_test_list[i]))

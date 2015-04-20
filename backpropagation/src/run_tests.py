@@ -108,7 +108,7 @@ if __name__=="__main__":
     logger.info("Program Arguments:")
     args_dict = vars(args)
     for key, value in args_dict.iteritems() :
-        logger.info("%s=%s" % (str(key), str(value)))
+        logger.info("%s=%s" % (str(key), str(value)))   
 
     test_suite = Tests(logger, args)
     target_test, Y_pred, cost_list, cost_test_list, learning_rates, rmse = test_suite.run_tests()
@@ -117,7 +117,7 @@ if __name__=="__main__":
     accuracy_score_Y_pred =  np.rint(Y_pred_copy).astype(int)
 
     if args.test_type != 'f':
-       logger.info('###################################Accuracy Results###############################')
+        logger.info('###################################Accuracy Results###############################')
         logger.info('Accuracy: ' + str(accuracy_score(target_test, accuracy_score_Y_pred)))
         logger.info('\n' + str(classification_report(target_test, accuracy_score_Y_pred)))
     else:
@@ -141,7 +141,7 @@ if __name__=="__main__":
     save_path = 'results/data/Experiment-%s' % (experiment_number)
     save_data(save_path, target_test, Y_pred, cost_list, cost_test_list, learning_rates, rmse, experiment_number)
 
-    # Plotting
+    # Plotting 
     if args.plot:
         plot_file_path = 'results/data/Experiment-%s' % (experiment_number)
         plot_cost_versus_epochs(args.autoscale, plot_file_path, experiment_number, cost_list, cost_test_list)
