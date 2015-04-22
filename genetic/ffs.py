@@ -10,8 +10,8 @@
 
 
 def fitness_func_1(bit_sum, l):
-    return (pow(((bit_sum / pow(2, l)), 10)))
+    return (pow((bit_sum / pow(2, l)), 10))
 
 
 def fitness_func_2(bit_sum, l):
-    return (pow((((1 - bit_sum) / pow(2, l)), 10)))
+    return (pow(((1 - bit_sum) / pow(2, l)), 10))

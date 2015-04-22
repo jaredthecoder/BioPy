@@ -15,7 +15,7 @@
 import random
 
 import bitstring as bs
-import scipy as sp
+from scipy import stats
 import numpy as np
 
 import ffs
@@ -50,8 +50,8 @@ class BaseGeneticAlgorithm(object):
         self.l = args.l
         self.N = args.N
         self.G = args.G
-        self.pr_mutation = args.pr_mutation
-        self.pr_crossover = args.pr_crossover
+        self.pr_mutation = args.pm
+        self.pr_crossover = args.pc
         self.population = []
         self.current_offspring = []
         self.nruns = args.nruns
@@ -59,29 +59,29 @@ class BaseGeneticAlgorithm(object):
         self.learn = args.learn
         self.ff = args.ff
         self.ce = args.ce
+        self.max_recovery = 100
 
         # Helper objects
         self.logger = logger
-        self.orig_fitness_vals = np.zeros((self.G, self.N))
-        self.norm_fitness_vals = np.zeros((self.G, self.N))
-        self.total_fitness_vals = np.zeros((self.G, self.N))
-        self.parents = np.zeros((self.G, 2))
+        self.orig_fitness_vals = np.zeros((self.G + self.max_recovery, self.N))
+        self.norm_fitness_vals = np.zeros((self.G + self.max_recovery, self.N))
+        self.total_fitness_vals = np.zeros((self.G + self.max_recovery, self.N))
+        self.parents = [[None, None] for x in xrange(self.G + self.max_recovery)]
         self.pr_mut_dist = None
         self.pr_cr_dist = None
         self.env_state = 0
 
         # Statistics Objects
-        self.avg_fitness_vals = np.zeros((self.nruns, 2,  self.G))
-        self.best_fitness_vals = np.zeros((self.nruns, 2,  self.G))
-        self.num_correct_bits = np.zeros((self.nruns, 2, self.G))
+        self.avg_fitness_vals = np.zeros((self.nruns, 2,  self.G + self.max_recovery))
+        self.best_fitness_vals = np.zeros((self.nruns, 2,  self.G + self.max_recovery))
+        self.num_correct_bits = np.zeros((self.nruns, 2, self.G + self.max_recovery))
         self.recovery_time = 0
 
 
     def initialize_algorithm(self):
         # Initialize the population
-        self.logger.info("Initializing population and genetic environment...")
+        self.logger.info("Initializing population...")
         self.initialize_pop()
-        self.initialize_env()
         self.logger.info("Initialization Complete.")
 
         # Generate probablility distributions for mutation and crossover
@@ -94,6 +94,8 @@ class BaseGeneticAlgorithm(object):
     # Initialize the Population
     def initialize_pop(self):
         # Generate N random bitstrings
+        self.population = []
+        self.current_offspring = []
         for i in range(self.N):
             tmp_bitstring = ''.join(random.choice('01') for _ in range(self.N))
             tmp_bitstring = bs.BitArray(bin=tmp_bitstring)
@@ -102,9 +104,10 @@ class BaseGeneticAlgorithm(object):
     # Initialize the genetic environment
     def initialize_env(self):
         # Get the appropriate fitness function
+        self.logger.info("Initializing environment...")
         if self.env_state != 0:
             self.recovery_time = 0
-            self.ff = random.choice(['fitness_func_2'])
+        self.logger.info("Initialized environment.")
 
     # Generate probability distributions for mutation and crossover
     def generate_prob_distributions(self):
@@ -119,52 +122,118 @@ class BaseGeneticAlgorithm(object):
 
         # Generate the object that will be used to get random numbers
         # according to each distribution.
-        self.pr_mut_dist = sp.stats.rv_discrete(name='pr_mut_dist',
+        self.pr_mut_dist = stats.rv_discrete(name='pr_mut_dist',
                                                 values=(xk, pk1))
-        self.pr_cr_dist = sp.stats.rv_discrete(name='pr_cr_dist',
+        self.pr_cr_dist = stats.rv_discrete(name='pr_cr_dist',
                                                values=(xk, pk2))
 
     # Calculate the fitness of each individual of the population
     def fitness(self, g, nrun, ff=ffs.fitness_func_1):
         total_fitness = 0
 
+        self.logger.debug("Getting fitness of generation %d" % g)
+
         # Step through each bitstring in the population
         for i, bitstring in enumerate(self.population):
             # Get the integer value of the string
             bit_sum = bitstring.uint
-            fitness_val = ff(bit_sum, self.l)
+            self.logger.debug("Sum of bitstring at %d of population: %d" % (i, bit_sum))
+            fitness_val = self.ff(bit_sum, self.l)
             self.orig_fitness_vals[g][i] = fitness_val
+            self.logger.debug("Fitness Value at index %d in population: %lf" % (i, fitness_val))
             total_fitness += fitness_val
 
+        self.logger.debug("Total fitness from step 1: %lf" % total_fitness)
+
+        self.norm_fitness_vals[g] = self.orig_fitness_vals[g] / total_fitness
+        self.logger.debug("Sum of norm fitness vals: %lf" % np.sum(self.norm_fitness_vals[g]))
+
+        prev_norm_fitness_val = 0
         for i in range(self.N):
-            norm_fitness_val = (self.orig_fitness_vals[g][i] / total_fitness)
-            self.norm_fitness_vals[g][i] = norm_fitness_val
-            if i != 0:
-                self.total_fitness_vals[g][i] = (
-                    self.norm_fitness_vals[g][i - 1] + norm_fitness_val)
-            else:
-                self.total_fitness_vals[g][i] = norm_fitness_val
+            self.logger.debug("Normalized Fitness Value at index %d in population: %lf" % (i, self.norm_fitness_vals[g][i]))
+            self.total_fitness_vals[g][i] = (
+                self.norm_fitness_vals[g][i] + prev_norm_fitness_val)
+            prev_norm_fitness_val = self.total_fitness_vals[g][i]
+            self.logger.debug("Total Fitness Value at index %d in population: %lf" % (i, self.total_fitness_vals[g][i]))
 
     # Select parents from population
     def select(self, g):
             rand_nums = np.random.uniform(0, 1, 2)
 
             # Select the first parent
+            self.logger.info("Selecting the first parent...")
             prev_individual_fit = 0
-            for j, individual_fit in enumerate(self.total_fitness_vals[g]):
-                if j != 0:
-                    if (prev_individual_fit <= rand_nums[0] <= individual_fit):
-                        self.parents[g][0] = individual_fit
-                prev_individual_fit = individual_fit
+            j = 0
+            while True:
+                if j >= self.N:
+                    j = 0
+                    rand_nums = np.random.uniform(0, 1, 2)
 
-            # Select the second parents
-            prev_individual_fit = 0
-            for j, individual_fit in enumerate(self.total_fitness_vals[g]):
+                individual_fit = self.total_fitness_vals[g][j]
+                if rand_nums[0] < self.total_fitness_vals[g][0]:
+                    self.logger.debug("1: Prev_Individual Fit: %lf" % prev_individual_fit)
+                    self.logger.debug("1: Individual Fit: %lf" % individual_fit)
+                    self.logger.debug("1: Rand Num: %lf" % rand_nums[0])
+                    self.logger.debug("1: Population at %d: %s" % (j, self.population[j].bin))
+                    self.parents[g][0] = self.population[0]
+                    break
+
                 if j != 0:
-                    if (prev_individual_fit <= rand_nums[1] <= individual_fit):
-                        if (individual_fit != self.parents[g][0]):
-                            self.parents[g][1] = individual_fit
+                    self.logger.debug("1: Prev_Individual Fit: %lf" % prev_individual_fit)
+                    self.logger.debug("1: Individual Fit: %lf" % individual_fit)
+                    self.logger.debug("1: Rand Num: %lf" % rand_nums[0])
+                    self.logger.debug("1: Population at %d: %s" % (j, self.population[j].bin))
+
+                    if (prev_individual_fit <= rand_nums[0] <= individual_fit):
+                        self.logger.debug("1: selected individuval from population at %d: %s" % (j, self.population[j].bin))
+                        self.parents[g][0] = self.population[j]
+                        self.logger.debug("1: parents[%d][0]: %s" % (g, str(self.parents[g][0])))
+                        break
                 prev_individual_fit = individual_fit
+                j += 1
+            self.logger.info("First parent has been selected.")
+
+            # Select the second parent
+            self.logger.info("Selecting the second parent...")
+            prev_individual_fit = 0
+            j = 0
+            cycles = 0
+            while True:
+                if j >= self.N:
+                    cycles += j
+                    if cycles >= 100:
+                        self.parents[g][1] = self.parents[g][0]
+                        break
+                    else:
+                        j = 0
+                        rand_nums = np.random.uniform(0, 1, 2)
+
+                individual_fit = self.total_fitness_vals[g][j]
+                if rand_nums[1] < self.total_fitness_vals[g][0]:
+                    self.logger.debug("2: prev_individual fit: %lf" % prev_individual_fit)
+                    self.logger.debug("2: individual fit: %lf" % individual_fit)
+                    self.logger.debug("2: rand num: %lf" % rand_nums[1])
+                    self.logger.debug("2: population at %d: %s" % (j, self.population[j].bin))
+                    self.parents[g][1] = self.population[0]
+                    break
+
+                if j != 0:
+                    self.logger.debug("2: prev_individual fit: %lf" % prev_individual_fit)
+                    self.logger.debug("2: individual fit: %lf" % individual_fit)
+                    self.logger.debug("2: rand num: %lf" % rand_nums[1])
+                    self.logger.debug("2: population at %d: %s" % (j, self.population[j].bin))
+
+                    if (prev_individual_fit <= rand_nums[1] <= individual_fit):
+                        if (self.population[j] != self.parents[g][0]):
+                            self.logger.debug("2: selected individuval from population at %d: %s" % (j, self.population[j].bin))
+                            self.parents[g][1] = self.population[j]
+                            self.logger.debug("1: parents[%d][0]: %s" % (g, str(self.parents[g][1])))
+                            break
+
+                prev_individual_fit = individual_fit
+                j += 1
+
+            self.logger.info("Second parent has been selected.")
 
     # Mutate the parents
     def mutate(self, g):
@@ -178,9 +247,10 @@ class BaseGeneticAlgorithm(object):
                 if to_mutate:
                     parent.invert(index_bit)
 
+
     # Crossover the parents
     def crossover(self, g):
-        to_crossover = self.pr_cross_dist.rvs(size=1)
+        to_crossover = self.pr_cr_dist.rvs(size=1)
 
         # Crossover the parents if to_crossover is 1, otherwise copy the
         # parents exactly into the children
@@ -190,13 +260,13 @@ class BaseGeneticAlgorithm(object):
             c2 = bs.BitArray(length=self.N)
 
             # Select the bit at which to crossover the parents
-            crossover_bit = random.randint(0, self.N)
+            crossover_bit = random.randint(0, self.l)
 
             # Perform the crossover
             c1.overwrite(self.parents[g][0][:crossover_bit], 0)
-            c1.overwrite(self.parents[g][1][:crossover_bit], crossover_bit)
+            c1.overwrite(self.parents[g][1][:(self.l - crossover_bit)], crossover_bit)
             c2.overwrite(self.parents[g][1][:crossover_bit], 0)
-            c2.overwrite(self.parents[g][0][:crossover_bit], crossover_bit)
+            c1.overwrite(self.parents[g][0][:(self.l - crossover_bit)], crossover_bit)
 
             self.current_offspring.append(c1)
             self.current_offspring.append(c2)
@@ -229,7 +299,7 @@ class BaseGeneticAlgorithm(object):
                 if current_fitness == max_fitness:
                     child = current_child
 
-    def compute_statistics(self, g, nrun, env_state):
+    def compute_statistics(self, g, nrun):
         # Get the number of correct bits in the best individual
         index_bi = self.orig_fitness_vals[g].argmax()
         bi_bitstring = self.population[index_bi]
@@ -253,8 +323,10 @@ class BaseGeneticAlgorithm(object):
     # Check if the population has recovered from an environment change
     def check_population_recovery(self, g, nrun):
         checks = []
-        checks.append(self.best_fitness_vals[nrun][self.env_state][g] > self.best_fitness_vals[nrun][self.env_state - 1][self.G - 1])
-        checks.append(self.avg_fitness_vals[nrun][self.env_state][g] > self.avg_fitness_vals[nrun][self.env_state - 1][self.G - 1])
+        checks.append((self.best_fitness_vals[nrun][1][g] > self.best_fitness_vals[nrun][0][self.G - 1]))
+        checks.append((self.avg_fitness_vals[nrun][1][g] > self.avg_fitness_vals[nrun][0][self.G - 1]))
+        for check in checks:
+            print check
         if all(checks):
             return True
 
@@ -291,38 +363,48 @@ class BaseGeneticAlgorithm(object):
                                 " of generation %d finished." % g)
 
         # Compute statistics for this generation
-        self.logger.info("Computing statistics for Run %d, " +
-                            "Generation %d..." % nrun, g)
+        self.logger.info("Computing statistics for Run %d, Generation %d..." % (nrun, g))
         self.compute_statistics(g, nrun)
-        self.logger.info("Computing statistics for Run %d, " +
-                            "Generation %d." % nrun, g)
+        self.logger.info("Computation of statistics finished for Run %d, Generation %d." % (nrun, g))
 
         # Replace the old population with the new population
         self.population = self.current_offspring
-        self.logger.info("Generation %d finished." % g)
+        self.current_offspring = []
 
     # Run through the total runs specified
     def run(self):
-        for nrun in xrange(0, self.nruns):
+        for nrun in range(self.nruns):
             self.logger.info("Starting run %d..." % nrun)
             self.initialize_algorithm()
 
-            for g in xrange(0, self.G):
+            self.env_state = 0
+            self.ff = ffs.fitness_func_1
+            self.logger.info("Fitness Function before normal generation run: %s" % str(self.ff.__name__))
+
+            for g in range(self.G):
+                self.logger.info("Generation %d running..." % g)
                 self.reproduce(nrun, g)
+                self.logger.info("Generation %d finished." % g)
 
             if self.ce:
-                self.logger.info("Running Sudden change in environment test...")
+                self.logger.info("Running Sudden change in environment test starting at generation %d..." % g)
                 self.env_state = 1
                 self.initialize_env()
+                self.ff = ffs.fitness_func_2
+                self.logger.info("Fitness Function before changed environment generation run: %s" % str(self.ff.__name__))
 
                 while True:
+                    g += 1
+                    self.recovery_time += 1
+                    self.logger.info("Recovery Time: %d, Max Recovery: %d, Generation %d In Changed Environment" % (self.recovery_time, self.max_recovery, g))
+                    if self.recovery_time >= self.max_recovery:
+                        self.logger.info("Population has not recovered after %d iterations. Quitting now." % self.recovery_time)
+                        break
                     self.reproduce(nrun, g)
                     if self.check_population_recovery(g, nrun):
-                        self.logger.info("Population has recovered after %d " +
-                                         "iterations." % self.recovery_time)
+                        self.logger.info("Population has recovered after %d iterations." % self.recovery_time)
                         break
                     self.logger.info("Population has not recovered...continuing generation.")
-                    self.recovery_time += 1
 
             self.logger.info("Finished run %d." % nrun)
 
