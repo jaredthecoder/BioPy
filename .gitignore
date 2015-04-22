@@ -1,3 +1,5 @@
 *.pyc
 backpropagation/results/
+genetic/results/
+hopfield/results/
 
