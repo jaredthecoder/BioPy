@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import sklearn as sk 
+import sklearn as sk
 
 from utils import *
 
@@ -16,7 +16,6 @@ def plot_cost_versus_epochs_colormap(plot_file_name, target_test, Y_pred, cost_l
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    
     cmhot = plt.cm.get_cmap("hot")
     l = ax.scatter(x, y, c=color_metric, cmap=cmhot)
     fig.colorbar(l)
@@ -42,7 +41,7 @@ def plot_cost_versus_epochs(autoscale, plot_file_path, experiment_number, cost_l
     plt.grid()
     if autoscale:
         subplt.autoscale_view(True, True, True)
-    fig.tight_layout()  
+    fig.tight_layout()
 
     plot_file_name = "%s/epoch-vs-cost-exp-%s.pdf" % (plot_file_path, experiment_number)
     plt.savefig(plot_file_name, bbox_inches='tight')
@@ -56,7 +55,7 @@ def plot_cost_versus_epochs(autoscale, plot_file_path, experiment_number, cost_l
     plt.grid()
     if autoscale:
         subplt.autoscale_view(True,True,True)
-    fig.tight_layout()  
+    fig.tight_layout()
 
     plot_file_name = "%s/epoch-vs-testing-cost-exp-%s.pdf" % (plot_file_path, experiment_number)
     plt.savefig(plot_file_name, bbox_inches='tight')
@@ -77,7 +76,7 @@ def plot_rmse_versus_epochs(autoscale, plot_file_path, experiment_number, rmse):
     plt.grid()
     if autoscale:
         subplt.autoscale_view(True,True,True)
-    fig.tight_layout()  
+    fig.tight_layout()
 
     plot_file_name = "%s/epoch-vs-rmse-exp-%s.pdf" % (plot_file_path, experiment_number)
     plt.savefig(plot_file_name, bbox_inches='tight')
@@ -97,7 +96,7 @@ def plot_learning_rates_versus_epochs(autoscale, plot_file_path, experiment_numb
     plt.grid()
     if autoscale:
         subplt.autoscale_view(True,True,True)
-    fig.tight_layout()  
+    fig.tight_layout()
 
     plot_file_name = "%s/epoch-vs-lr-exp-%s.pdf" % (plot_file_path, experiment_number)
     plt.savefig(plot_file_name, bbox_inches='tight')
@@ -123,7 +122,7 @@ def plot_accuracy(plot_file_path, experiment_number, target_test, Y_pred):
     return plot_file_name
 
 def facial_recognition_graphs():
-    
+
     prediction_titles = [title(y_pred, y_test, target_names, i)
                          for i in range(y_pred.shape[0])]
 
