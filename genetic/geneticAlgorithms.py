@@ -41,6 +41,7 @@ class BaseGeneticAlgorithm(object):
             ff is the fitness function to use
             ce is a bool specifying whether to inflict a sudden change of
             environment on the final population
+            rs  is the seed for the random number generator; if left blank it will default to None.
 
     """
 
@@ -52,6 +53,7 @@ class BaseGeneticAlgorithm(object):
         self.G = args.G
         self.pr_mutation = args.pm
         self.pr_crossover = args.pc
+        random.seed(args.rs); #seed the RNG
         self.population = []
         self.current_offspring = []
         self.nruns = args.nruns
@@ -97,7 +99,7 @@ class BaseGeneticAlgorithm(object):
         self.population = []
         self.current_offspring = []
         for i in range(self.N):
-            tmp_bitstring = ''.join(random.choice('01') for _ in range(self.N))
+            tmp_bitstring = ''.join(random.choice('01') for _ in range(self.l))
             tmp_bitstring = bs.BitArray(bin=tmp_bitstring)
             self.population.append(tmp_bitstring)
 
@@ -137,15 +139,15 @@ class BaseGeneticAlgorithm(object):
         for i, bitstring in enumerate(self.population):
             # Get the integer value of the string
             bit_sum = bitstring.uint
-            self.logger.debug("Sum of bitstring at %d of population: %d" % (i, bit_sum))
+            self.logger.info("Sum of bitstring at %d of population: %d" % (i, bit_sum))
             fitness_val = self.ff(bit_sum, self.l)
             self.orig_fitness_vals[g][i] = fitness_val
             self.logger.debug("Fitness Value at index %d in population: %lf" % (i, fitness_val))
             total_fitness += fitness_val
 
         self.logger.debug("Total fitness from step 1: %lf" % total_fitness)
-
-        self.norm_fitness_vals[g] = self.orig_fitness_vals[g] / total_fitness
+        if total_fitness > 0:
+            self.norm_fitness_vals[g] = self.orig_fitness_vals[g] / total_fitness
         self.logger.debug("Sum of norm fitness vals: %lf" % np.sum(self.norm_fitness_vals[g]))
 
         prev_norm_fitness_val = 0
@@ -239,7 +241,7 @@ class BaseGeneticAlgorithm(object):
     def mutate(self, g):
 
         for parent in self.parents[g]:
-            for index_bit in xrange(0, self.N):
+            for index_bit in xrange(0, self.l):
                 # Determine whether we will perform a mutation on the bit
                 to_mutate = self.pr_mut_dist.rvs(size=1)
 
@@ -256,8 +258,8 @@ class BaseGeneticAlgorithm(object):
         # parents exactly into the children
         if to_crossover:
             # Create empty children
-            c1 = bs.BitArray(length=self.N)
-            c2 = bs.BitArray(length=self.N)
+            c1 = bs.BitArray(length=self.l)
+            c2 = bs.BitArray(length=self.l)
 
             # Select the bit at which to crossover the parents
             crossover_bit = random.randint(0, self.l)

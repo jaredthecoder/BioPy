@@ -56,7 +56,7 @@ def setup_argparser():
     optionalArguments.add_argument('--plot', dest='plot', required=False, type=bool, default=True, help="Specify if data is to be plotted. Default is True.")
     optionalArguments.add_argument('--autoscale', dest='autoscale', required=False, type=bool, default=True, help="Specify plots should be autoscaled to data frame. Default is True.")
     optionalArguments.add_argument('--nruns', dest='nruns', required=False, type=int, default=10, help="Specify the number of runs to do of the algorithm. Default is 10.")
-
+    optionalArguments.add_argument('--seed', dest='rs', required=False, type=int, default=None, help="seed for RNG. Default is none")
     return parser
 
 def setup_logger(log_path, logger_name, logfile_name):
