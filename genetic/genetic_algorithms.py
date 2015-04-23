@@ -41,6 +41,7 @@ class BaseGeneticAlgorithm(object):
             ff is the fitness function to use
             ce is a bool specifying whether to inflict a sudden change of
             environment on the final population
+            rs  is the seed for the random number generator; if left blank it will default to None.
 
     """
 
@@ -52,6 +53,7 @@ class BaseGeneticAlgorithm(object):
         self.G = args.G
         self.pr_mutation = args.pm
         self.pr_crossover = args.pc
+        random.seed(args.rs); #seed the RNG
         self.population = []
         self.current_offspring = []
         self.nruns = args.nruns
