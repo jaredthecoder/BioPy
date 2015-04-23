@@ -1,5 +1,6 @@
 *.pyc
-backpropagation/results/
-genetic/results/
-hopfield/results/
+neuralnetworks/backpropagation/results/
+genetics/basic/results/
+neuralnetworks/hopfield/results/
+selforganization/pso/results
 

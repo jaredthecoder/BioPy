@@ -31,3 +31,7 @@ Below you will find several categories of applications in this project.
         - crossover and mutation of genes
         - learning ability for offspring of each generation
 
+#####Self-Organization and Autonomous Agents
+- Particle Swarm Optimization
+    - Features:
+
