@@ -89,7 +89,7 @@ def plot_results(G, nruns, avg_fitness_vals, best_fitness_vals, num_correct_bits
     plt.xlabel('Generations')
     plt.ylabel('Average Fitness Value')
     plt.title('Average Fitness Values Over %d Runs with %d Generations' %
-              (avg_fitness_vals.shape[0], avg_fitness_vals.shape[2]))
+              (avg_fitness_vals.shape[0], G))
     plt.grid()
     if autoscale:
         subplt.autoscale_view(True, True, True)
@@ -106,7 +106,7 @@ def plot_results(G, nruns, avg_fitness_vals, best_fitness_vals, num_correct_bits
     plt.xlabel('Generations')
     plt.ylabel('Best Fitness Value')
     plt.title('Best Fitness Values Over %d Runs with %d Generations' %
-              (best_fitness_vals.shape[0], best_fitness_vals.shape[2]))
+              (best_fitness_vals.shape[0], G))
     plt.grid()
     if autoscale:
         subplt.autoscale_view(True, True, True)
@@ -123,7 +123,7 @@ def plot_results(G, nruns, avg_fitness_vals, best_fitness_vals, num_correct_bits
     plt.xlabel('Generations')
     plt.ylabel('Number of Correct Bits')
     plt.title('Number of Correct Bits Over %d Runs with %d Generations' %
-              (num_correct_bits.shape[0], num_correct_bits.shape[2]))
+              (num_correct_bits.shape[0], G))
     plt.grid()
     if autoscale:
         subplt.autoscale_view(True, True, True)
@@ -132,17 +132,17 @@ def plot_results(G, nruns, avg_fitness_vals, best_fitness_vals, num_correct_bits
     plt.savefig(plot_file_name, bbox_inches='tight')
 
     if ce:
-        x = np.arange(0, G + 100)
+        x = np.arange(0, G + 30)
 
         # Plot average fitness values
         fig = plt.figure()
         subplt = plt.subplot(111)
 
         for nrun in range(nruns):
-            plt.plot(x, avg_fitness_vals[nrun][1])
+            plt.plot(x, avg_fitness_vals[nrun][1][:(G + 30)])
         plt.xlabel('Generations')
         plt.ylabel('Average Fitness Value')
-        plt.title('CE Average Fitness Values Over %d Runs with %d Generations' %
+        plt.title('Average Fitness Values Over %d Runs with %d Max Generations' %
                 (avg_fitness_vals.shape[0], avg_fitness_vals.shape[2]))
         plt.grid()
         if autoscale:
@@ -156,10 +156,10 @@ def plot_results(G, nruns, avg_fitness_vals, best_fitness_vals, num_correct_bits
         subplt = plt.subplot(111)
 
         for nrun in range(nruns):
-            plt.plot(x, best_fitness_vals[nrun][1])
+            plt.plot(x, best_fitness_vals[nrun][1][:(G + 30)])
         plt.xlabel('Generations')
         plt.ylabel('Best Fitness Value')
-        plt.title('CE Best Fitness Values Over %d Runs with %d Generations' %
+        plt.title('Best Fitness Values Over %d Runs with %d Max Generations' %
                 (best_fitness_vals.shape[0], best_fitness_vals.shape[2]))
         plt.grid()
         if autoscale:
@@ -173,10 +173,10 @@ def plot_results(G, nruns, avg_fitness_vals, best_fitness_vals, num_correct_bits
         subplt = plt.subplot(111)
 
         for nrun in range(nruns):
-            plt.plot(x, num_correct_bits[nrun][1])
+            plt.plot(x, num_correct_bits[nrun][1][:(G + 30)])
         plt.xlabel('Generations')
         plt.ylabel('Number of Correct Bits')
-        plt.title('CE Number of Correct Bits Over %d Runs with %d Generations' %
+        plt.title('Number of Correct Bits Over %d Runs with %d Max Generations' %
                 (num_correct_bits.shape[0], num_correct_bits.shape[2]))
         plt.grid()
         if autoscale:
