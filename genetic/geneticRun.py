@@ -18,7 +18,7 @@ from argparse import RawTextHelpFormatter
 import numpy as np
 import matplotlib.pyplot as plt
 
-from genetic_algorithms import BaseGeneticAlgorithm
+from geneticAlgorithms import BaseGeneticAlgorithm
 import ffs
 
 # Function for changing directories safely
