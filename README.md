@@ -32,6 +32,7 @@ Below you will find several categories of applications in this project.
         - learning ability for offspring of each generation
 
 #####Self-Organization and Autonomous Agents
+----
 - Particle Swarm Optimization
     - Features:
 
