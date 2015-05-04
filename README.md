@@ -5,6 +5,13 @@
 BioPy is a collection (in-progress) of biologically-inspired algorithms written in Python. Some of the algorithms included are more focused on artificial model's of biological computation, such as Hopfield Neural Networks, while others are inherently more biologically-focused, such as the basic genetic programming module included in this project. Use it for whatever you like, and please contribute back to the project by cleaning up code that is here or contributing new code for
 applications in biology that you may find interesting to program.
 
+####Dependencies:
+----
+- NumPy
+- SciPy
+- Scikit-Learn
+- Matplotlib
+
 ####Categories
 ----
 Below you will find several categories of applications in this project.
