@@ -29,8 +29,12 @@ def cd(newPath):
     yield
     os.chdir(savedPath)
 
+#distance with wrapping
 def Distance(s1, s2):
-   return (sum((s1-s2)**2))**.5
+   x = self.pos - s
+   x = np.minimum(x, (self.maxPos)-x)
+   return sum((x)**2)**.5
+
 # Setup the command line parser
 def setup_argparser():
 
@@ -88,11 +92,11 @@ def PlotScatter(swarm, maxes, best, iteration):
     subplt.scatter(np.array([best[0]]), np.array([best[1]]), s=100,marker = 'x', c = "r", label = "Global Best")
     plt.xlim([-1*maxes[0]/2, maxes[0]/2])
     plt.ylim([-1*maxes[1]/2, maxes[1]/2])
-    plt.title("Final Locations of Particles in Swarm")
+    plt.title("Locations of Particles after Iteration %d" % iteration)
     plt.xlabel("X")
     plt.ylabel('Y')
     plt.legend(loc="upper left", bbox_to_anchor=[0, 1], ncol=2, shadow=True, title="Legend", fancybox=True)
-    filename = "Scatter-%d.png" % iteration
+    filename = "Scatter Plots/Scatter-%d.png" % iteration
     fig.savefig(filename)
     plt.close(fig)
 def PlotError(dim_error):
@@ -177,9 +181,7 @@ def main():
         #if swarm is 2D make a Scatter Plot
         if len(args.dim) == 2:
             logger.info("Creating scatter plot for iteration")
-            os.chdir("Scatter Plots")
             PlotScatter(pso.swarm, args.dim, pso.globalBest, i)
-            os.chdir("..")
             logger.info("Finished created scatter plot")
         #if we've converged to within a minimum error, break
         if cont is False:

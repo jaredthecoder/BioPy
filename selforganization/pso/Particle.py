@@ -43,7 +43,7 @@ class Particle(object):
 		self.curFitness = 0
 		self.bestFitness = 0
 		self.velocity = np.zeros(len(pos))
-		self.maxPos = maxPos
+		self.maxPos = np.array(maxPos)
 		self.neighborhood = []
 	#sets the velocity of the particle accoriing to its topology
 	def setVelocity(self, inertia, globalBest, phi):
@@ -76,9 +76,8 @@ class Particle(object):
 		self.curFitness = Q(self.pos, self.maxPos)
 		if self.curFitness > self.bestFitness:
 			self.bestFitness = self.curFitness
-	#get distance between particle and position s
+	#get distance between particle and position s (Wraps around)
 	def getDistance(self, s):
-		distance = 0
-		for i in range(len(s)):
-			distance += ((self.pos[i]-s[i])%(self.maxPos[i]/2))**2
-		return distance ** (1.0/2)
+		x = self.pos - s
+		x = np.minimum(x, (self.maxPos)-x)
+		return sum((x)**2)**.5
