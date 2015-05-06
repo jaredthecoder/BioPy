@@ -51,7 +51,7 @@ class PSO(object):
 						i.neighborhood.append(neighbor)
 				print i.neighborhood
 	#neighborhood is all particles within a certain range
-	def setEuclidianNeigbors(self, radius):		
+	def setEuclidianNeigbors(self, radius):
 		if radius > 0:
 			for i in self.swarm:
 				i.neighborhood = filter(lambda other: i != other and i.getDistance(other.pos) < radius, self.swarm)

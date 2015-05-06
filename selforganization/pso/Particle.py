@@ -7,7 +7,7 @@ class Particle(object):
 		A representation of a particle in the PSO.
 		Fields:
 			pos: The position of the particle in the world array, represented as an array.
-				The particles actual xyz... cordinate is equal to: pos - maxPos/2 
+				The particles actual xyz... cordinate is equal to: pos - maxPos/2
 			best: The position visited by this particle that has the best fitness
 			curFitness: the fitness of the particle at its current position
 			bestFitness: the best fitness of any position the particle has traveled to.
@@ -16,14 +16,14 @@ class Particle(object):
 			velocity: a vector that represents the current velocity and direction of the particle
 			maxPos: array of he maximum possible position of the particle in any dimension i.
 			neighbors: a list of other particles considered "neighbors" to the given particle
-		
+
 		Functions:
 			setVelocity:
 				parameters: inertia, globalBest, phi
 				Description: determines the velocity of the particle
 			scaleVelocity:
 				parameters: maxvelocity
-				Description: rescales the particle velocity so that it does not 
+				Description: rescales the particle velocity so that it does not
 					exceed the global maxvelocity or exit the world range
 			Move:
 				parameters: none
@@ -38,7 +38,7 @@ class Particle(object):
 	'''
 	#initializes the paritcle
 	def __init__(self, pos = [0, 0], maxPos = [100, 100]):
-		self.pos = pos 
+		self.pos = pos
 		self.best = pos
 		self.curFitness = 0
 		self.bestFitness = 0
@@ -54,8 +54,8 @@ class Particle(object):
 				best_neighbor = i
 		for i in range(len(self.pos)):
 			self.velocity[i] = inertia * self.velocity[i]
-			self.velocity[i] += phi[0] * random.random() * (self.best[i] - self.pos[i]) 
-			self.velocity[i] += phi[1] * random.random() * (globalBest[i]-self.pos[i]) 
+			self.velocity[i] += phi[0] * random.random() * (self.best[i] - self.pos[i])
+			self.velocity[i] += phi[1] * random.random() * (globalBest[i]-self.pos[i])
 			self.velocity[i] += phi[2] * random.random() * (best_neighbor.pos[i] - self.pos[i])
 	#scales the velocity to the global maxixmum velocity
 	def scaleVelocity(self, maxvelocity):
@@ -66,7 +66,7 @@ class Particle(object):
 		for i in range(len(self.pos)): #find velocity for ith dimension
 			if abs(self.velocity[i]) > maxvelocity**2:
 				self.velocity[i] *= (maxvelocity/change_distance)
-	#adjusts the position of the swarm based on its current velocity	
+	#adjusts the position of the swarm based on its current velocity
 	def Move(self):
 		for i in range(len(self.pos)):
 			self.pos[i] = (self.pos[i] + self.velocity[i])
