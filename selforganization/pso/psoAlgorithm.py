@@ -2,57 +2,79 @@ import numpy as np
 import random
 from Problems import *
 from Particle import *
-class Swarm:
-	def __init__(npart = 40, inertia=.5, params = (2, 2, 0), dimensions = (100, 100), maxvelocity=1, Q = Problem1, inertiaDecreaseRate = 1):
+class PSO(object):
+	'''Particle Swarm Optimization:
+		Fields:
+			inertia: the inertia of the world
+			inertiaPrime: rate of change of a the inertia (a percentage)
+			npart: number of particles in the world
+			phi: The parameters of the world. Conscious, social and a potential 3rd neigborhood parameter
+			dimensions: an array of n elements each representing the range for a dimension in the world
+			maxvelocity: the maximum possible velocity of a particle in the world
+			Q: Fitness function of the swarm
+			swarm: the swarm of particles
+		Fuctions:
+			Update: moves all particles swarms to the next epoch
+			setClosestNeighbors: for each particle sets as neighbors the k closest particles to it
+			setEuclidianNeigbhbors: for each particle sets its neighbors as all particles within range
+			getError: returns the error for the given orientation.
+	'''
+	def __init__(self, npart = 40, inertia=.5, phi = (2, 2, 2), dimensions = (100, 100), maxvelocity=1, Q = Problem1, inertiaPrime = 1):
 		self._inertia = inertia
-		self.params = params
+		self.phi = phi
 		self.globalBestFitness = 0
-		self.globalBest
+		self.maxvelocity = 1
+		self.globalBest = None
 		self.Q = Q
-		self.inertiaDecreaseRate = inertiaDecreaseRate
-		self.world = np.zeros(dimensions)
-		self.swarm = createSwarm(npart, world, dimensions)
-	def createSwarm(self, npart, world, dimensions):
-		swarm = []
+		self.inertiaPrime = inertiaPrime
+		self.swarm = []
+		#Create and initialize the swarm
 		for i in range(npart):
 			pos = np.zeros(len(dimensions))
-			for j in range(len(self.dimensions)):
-				pos[j] = random.randint(0, dimensions[j])
-			world[tuple(pos)) += 1
-			particle = Particle(x, y, len(world[0]), len(world), Q)
-			fitness = particle.getFitness()
-			if fitness > self.globalBestFitness:
+			for j in range(len(dimensions)):
+				pos[j] = random.randint(-1 * dimensions[j]/2, dimensions[j]/2)
+			particle = Particle(pos, dimensions)
+			fitness = particle.updateFitness(Q)
+			if fitness > self.globalBestFitness or self.globalBestFitness == 0:
 				self.globalBestFitness = fitness
-				self.globalBestX = particle._x
-				self.globalBestY = particle._y
-			swarm.append(particle)
-		return swarm
-	# sets as neighbors the k closest:
-	def setClosestNeighbors(self, k = 2):
-		for i in swarm:
-			#sort neighobrs into a stack
-			sortedSwarm = sorted(swarm, key = (lambda other: i.Distance(other.pos), reversed = True)
-			#the closest k particles that are not the target are its neighbors
-			while len(i.neighbors) < k:
-				neighbor = sortedSwarm.pop()
-				if i != neighbor:
-					i.neigbors.add(neighbor)
+				self.globalBest = particle.pos
+			self.swarm.append(particle)
+	def setClosestNeighbors(self, k):
+		if k > 0:
+			for i in self.swarm:
+				#sort neighobrs into a stack
+				sortedSwarm = sorted(self.swarm, key = (lambda other: i.getDistance(other.pos)), reverse = True)
+				#the closest k particles that are not the target are its neighbors
+				while len(i.neighborhood) < k:
+					neighbor = sortedSwarm.pop()
+					if i != neighbor:
+						i.neighborhood.append(neighbor)
+				print i.neighborhood
+	#neighborhood is all particles within a certain range
 	def setEuclidianNeigbors(self, radius):		
-		for i in self.swarm:
-			i.neighbors = filter(lambda other: if i != other and i.distance(other.pos) < radius, self.swarm)
+		if radius > 0:
+			for i in self.swarm:
+				i.neighborhood = filter(lambda other: i != other and i.getDistance(other.pos) < radius, self.swarm)
+				print i.neighborhood
+	#updates the positions of all particles
 	def Update(self):
 		#update everybody's position
 		for i in self.swarm:
-			world[tuple(i.pos)]-=1
-			i.setVelocity(self._inertia, self.globalBest, self.params)
+			i.setVelocity(self._inertia, self.globalBest, self.phi)
 			i.scaleVelocity(self.maxvelocity)
-			i.Position()
-			world[tuple(i.pos)] += 1
+			i.Move()
 		#Update everybody's fitness
 		for i in self.swarm:
-			i.updateFitness()
+			i.updateFitness(self.Q)
 			if i.bestFitness > self.globalBestFitness:
 				self.globalBestFitness = i.bestFitness
-				self.globalBestX = i._bestX
-				self.globalBestY = i._bestY
-		self._inertia *= self.inertiaDecreaseRate
+				self.globalBest = i.best
+		#degreade inertia
+		self._inertia *= self.inertiaPrime
+	#return the error of the swarm at the given orientation
+	def getError(self):
+		error = np.zeros(len(self.swarm[0].pos));
+		for i in self.swarm:
+			error += (i.pos - self.globalBest)**2
+		error = (1.0/(2*len(self.swarm))*error)**(.5)
+		return error
