@@ -9,6 +9,7 @@
 #
 ###############################################################
 
+import sys
 import os
 import argparse
 import logging
@@ -32,8 +33,8 @@ def cd(newPath):
 
 #distance with wrapping
 def Distance(s1, s2):
-   x = self.pos - s
-   x = np.minimum(x, (self.maxPos)-x)
+   x = s2.pos - s1
+   x = np.minimum(x, (s2.maxPos) - x)
    return sum((x)**2)**.5
 
 
@@ -41,9 +42,9 @@ def Distance(s1, s2):
 def setup_argparser():
 
     parser = argparse.ArgumentParser(description='' +
-                                     '    PyNet: PSO ' +
-                                     ' Algorithm in Python\n' +
-                                     '        Written by: Jared Smith and ' +
+                                     ' BioPy: Particle Swarm Optimization' +
+                                     ' Algorithm in Python.\n' +
+                                     ' Written by: Jared Smith and' +
                                      ' David Cunningham',
                                      version='1.0.0',
                                      formatter_class=RawTextHelpFormatter)
@@ -51,17 +52,18 @@ def setup_argparser():
     requiredArguments = parser.add_argument_group('required Arguments')
     requiredArguments.add_argument('-exp', dest='experiment_number', required=True, type=str, help="Number of this experiment.")
     optionalArguments = parser.add_argument_group('optional Arguments')
-    optionalArguments.add_argument('--num_part', dest='npart', required=False, type=int, default=40, help="Number of particles in the world")
-    optionalArguments.add_argument('--phi', dest='phi', required=False, type=tuple, default=(2, 2, 2), help="the conscious, social and potential neighboorhood parameter")
-    optionalArguments.add_argument('--maxVel', dest='maxVel', required=False, type=int, default=20, help="Maximum Velocity of the PSO")
-    optionalArguments.add_argument('--dim', dest='dim', required=False, type=tuple, default=(100, 100), help="Ranges of the dimensions of the world")
-    optionalArguments.add_argument('--inertia', dest='inertia', required=False, type=int, default=1, help="Strating inertia of world particle")
-    optionalArguments.add_argument('--inerPrime', dest='inerPrime', required=False, type=float, default=0.99, help="Percentage rate of change of inertia each iteration")
-    optionalArguments.add_argument('--minError', dest='minError', required=False, type=float, default=.01, help="The minimum error the PSO must reach before PSO ceases updating")
-    optionalArguments.add_argument('--maxIter', dest='maxIter', required=False, type=int, default=1000, help="Maximum nuber of iterations before PSO ceases updating")
-    optionalArguments.add_argument('--Q', dest='Q', required=False, type=callable, default=Problem1, help="fitness function of the PSO")
-    optionalArguments.add_argument('--num_neighbors', dest='k', required=False, type=int, default=0, help="Number of neighbors a particle has, or neighborhood range if Euclidian Topology")
-    optionalArguments.add_argument('--Euclid', dest='Euclid', required=False, type=bool, default=False, help="Whether or not Euclidian Topology")
+    optionalArguments.add_argument('--num_part', dest='npart', required=False, type=int, default=40, help="Number of particles in the world. Default is 40.")
+    optionalArguments.add_argument('--phi', dest='phi', required=False, type=tuple, default=(2, 2, 2), help="The conscious, social and potential neighboorhood parameters. Defaults are 2, 2, 2.")
+    optionalArguments.add_argument('--maxVel', dest='maxVel', required=False, type=int, default=20, help="Maximum Velocity of the PSO. Default is 20.")
+    optionalArguments.add_argument('--dim', dest='dim', required=False, type=tuple, default=(100, 100), help="Ranges of the dimensions of the world. Default is 100x100.")
+    optionalArguments.add_argument('--inertia', dest='inertia', required=False, type=float, default=1.0, help="Starting inertia of the particles. Default is 1.")
+    optionalArguments.add_argument('--inerPrime', dest='inerPrime', required=False, type=float, default=0.99, help="Percentage rate of change of inertia each iteration. Default is 0.99.")
+    optionalArguments.add_argument('--minError', dest='minError', required=False, type=float, default=.01, help="The minimum error the system must reach before it ceases updating. Default is 0.01.")
+    optionalArguments.add_argument('--maxIter', dest='maxIter', required=False, type=int, default=1000, help="Maximum number of iterations before the system ceases updating. Default is 1000.")
+    optionalArguments.add_argument('--Q', dest='Q', required=False, type=str, default='Problem1', help="Fitness function to use. Default is Problem1 specified in Problems.py.")
+    optionalArguments.add_argument('--num_neighbors', dest='k', required=False, type=int, default=0, help="Number of neighbors a particle has, or neighborhood range if Euclid parameter\n" +
+                                   "for Euclidean Topology is True. Default is 0.")
+    optionalArguments.add_argument('--Euclid', dest='Euclid', required=False, type=bool, default=False, help="Whether or not to use the Euclidian Topology. Default is False.")
     return parser
 
 
@@ -136,7 +138,7 @@ def PlotConvergence(vals):
 
 
 def FindPercentConverge(swarm, best):
-    filtered = filter(lambda x: Distance(best, x.pos)<.5, swarm)
+    filtered = filter(lambda x: Distance(best, x)<.5, swarm)
     return 100*((1.0*len(filtered)/len(swarm)))
 
 
@@ -144,6 +146,17 @@ def main():
     parser = setup_argparser()
     args = parser.parse_args()
     experiment_number = args.experiment_number
+
+    print args.Q
+    if str(args.Q) == 'Problem1':
+        args.Q = Problem1
+    elif str(args.Q) == 'Problem2':
+        args.Q = Problem2
+    else:
+        print 'Incorrectly specified argument to Q (fitness function). Must be Problem1 or Problem2.'
+        sys.exit(1)
+
+    print args.Q
 
     # Setup directories for storing results
     if not os.path.exists('results'):
