@@ -44,4 +44,5 @@ Below you will find several categories of applications in this project.
 ----
 - Particle Swarm Optimization
     - Features:
+        - You can configure many of the parameters of the algorithm such as the velocity, acceleration, and number of initial particles, as well as several other parameters.
 
