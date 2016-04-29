@@ -121,8 +121,22 @@ class BackPropagationNetwork(object):
 
         return cost
 
+    def predict(self, X):
+        """
+        predict calculates activations for all layers, returns prediction for Y
 
-        a_N_predict = []		# List of activations including bias unit for non-output layers
+        Parameters
+            X is array of input features dimensions n_observations by n_features
+
+        Returns
+            a_N is outputs of all units
+            a_N[L] is array of predicted Y values dimensions n_observations by n_classes
+        """
+
+        m = len(X)
+        T = len(self.Theta_L)
+
+        a_N_predict = []        # List of activations including bias unit for non-output layers
 
         # Input Layer inputs
         a_N_predict.append( X )
@@ -139,7 +153,6 @@ class BackPropagationNetwork(object):
             a_N_predict.append(sigmoid(z))
 
         return a_N_predict, a_N_predict[T]
-
 
     def back_prop(self, a_N_backprop, Y_train):
         """

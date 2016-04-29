@@ -13,6 +13,8 @@ import sklearn as sk
 from sklearn.metrics import confusion_matrix, classification_report
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.metrics import accuracy_score
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
 # Project specific libraries
@@ -117,7 +119,7 @@ if __name__=="__main__":
     accuracy_score_Y_pred =  np.rint(Y_pred_copy).astype(int)
 
     if args.test_type != 'f':
-       logger.info('###################################Accuracy Results###############################')
+        logger.info('###################################Accuracy Results###############################')
         logger.info('Accuracy: ' + str(accuracy_score(target_test, accuracy_score_Y_pred)))
         logger.info('\n' + str(classification_report(target_test, accuracy_score_Y_pred)))
     else:
