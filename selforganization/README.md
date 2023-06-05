@@ -1,6 +1,6 @@
 Self-Organization
 ====
-
+Code Contributor : David Cunningham
 - [Particle Swarm Optimization](https://ieeexplore.ieee.org/document/488968)  
      Authors: James Kennedy and Russell Eberhart
 
